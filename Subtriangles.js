@@ -28,35 +28,9 @@ class Subtriangles {
         this.bc = Subtriangles.midpoint(this.b, this.c);
         this.ac = Subtriangles.midpoint(this.a, this.c);
 
-        // If faceGeoPos.faceId is one character long, faceGeoPos is a face of the icosahedron,
-        // and subtrianglesIds should be calculated to harmonize the surfaces of the 16 subtriangles
+        // KISS: Keep It Simple Stupid
+        // ac_ab is (ac+ab)/||ac+ab||
 
-        if (faceGeoPos.faceId.length === 1) {
-            // console.log("faceGeoPos.faceId.length === 1, faceId=",faceGeoPos.faceId);
-            // calculate the gravity center of the triangle
-            const gc = Subtriangles.gravityCenter(this.a, this.b, this.c);
-            //console.log("gc: ",gc);
-            // The purpose is to get a surface of the subtriangle of index 0 equal to 1/16 of the surface of the parent triangle
-            // So we need to slightly rotate the midpoints toward the gravity center from 10.812 degrees from the center of the triangle
-            // to 9.918 degrees from the center of the triangle
-            const angle = 0.1731078136930592; // in radians, approx 9.918 degrees
-            this.ac_ab = Subtriangles.rotateTowards(gc, this.a, angle);
-            // console.log("ac_ab: ",this.ac_ab);
-            this.ab_bc = Subtriangles.rotateTowards(gc, this.b, angle);
-            this.bc_ac = Subtriangles.rotateTowards(gc, this.c, angle);
-            // The purpose is to get a surface of the subtriangles of index 1, 6 and 11 equal to the surface of the subtriangles of index 3, 15, 5, 8, 10, 13
-            // So we need to rotate the vertices toward the opposite vertices of angle 0.2807418107371509 radians, 16.085 degrees
-            const angleVertex = 0.2807418107371509; // in radians, approx 16.085 degrees
-            this.c_ac = Subtriangles.rotateTowards(this.c, this.a, angleVertex);
-            this.bc_c = Subtriangles.rotateTowards(this.c, this.b, angleVertex);
-            this.a_ab = Subtriangles.rotateTowards(this.a, this.b, angleVertex);
-            this.ab_b = Subtriangles.rotateTowards(this.b, this.a, angleVertex);
-            this.b_bc = Subtriangles.rotateTowards(this.b, this.c, angleVertex);
-            this.ac_a = Subtriangles.rotateTowards(this.a, this.c, angleVertex);
-        }
-        else {
-        //console.log("ab: ",this.ab);
-        //console.log("a: ",this.a);
         // Second-level midpoints
         this.ac_ab = Subtriangles.midpoint(this.ac, this.ab);
         this.ab_bc = Subtriangles.midpoint(this.ab, this.bc);
@@ -69,12 +43,12 @@ class Subtriangles {
         this.bc_c = Subtriangles.midpoint(this.bc, this.c);
         this.c_ac = Subtriangles.midpoint(this.c, this.ac);
         this.ac_a = Subtriangles.midpoint(this.ac, this.a);
+
         //  strangely, the following point is not equal to this.ab_bc
         //  this.ac_ab_b_bc = Subtriangles.midpoint(this.ac_ab, this.b_bc);
         // Why is this.ac_ab_b_bc != this.ab_bc ? Because in spherical geometry, it is not possible
         // to divide a spherical triangle into four similar spherical triangles by connecting the midpoints of its sides.
         //console.log(faceGeoPos.subtrianglesIds);
-        }
 
         // If faceGeoPos.faceId is one character long, faceGeoPos is a face of the icosahedron,
         // and subtrianglesIds should be named according to faceGeoPos.subtrianglesIds
