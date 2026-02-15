@@ -81,6 +81,8 @@ class Subtriangles {
         // console.log("A: ",[this.a, this.a_ab, this.ac_a]);
         // Define 16 subtriangles (each as a FacesGeoPositions)
         // console.log("faceId: ",this.faceGeoPos.faceId + ids[0], " up: ", up);
+
+        //The vertices are clockwise in order to calculate if a point is inside the triangle:
         this.subFaces = [
             new FaceGeoPositions(this.faceGeoPos.faceId + ids[0], [this.ac_ab, this.ab_bc, this.bc_ac], faceGeoPos.subtrianglesIds,up),
             new FaceGeoPositions(this.faceGeoPos.faceId + ids[1], [this.a, this.a_ab, this.ac_a], faceGeoPos.subtrianglesIds,up),
