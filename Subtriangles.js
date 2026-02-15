@@ -160,14 +160,14 @@ class Subtriangles {
         const sinA = Math.sin(angle);
 
         const dot = p1.x * x + p1.y*y + p1.z*z;
-        console.log("p1.x: ",p1.x);
+        //console.log("p1.x: ",p1.x);
         // Rodrigues' rotation formula
         const term1 = [
             p1.x * cosA,
             p1.y * cosA,
             p1.z * cosA
         ];
-        console.log("term1: ",term1);
+        //console.log("term1: ",term1);
         const term2 = [
             (y * p1.z - z * p1.y) * sinA,
             (z * p1.x - x * p1.z) * sinA,
@@ -178,7 +178,7 @@ class Subtriangles {
              y * dot * (1 - cosA),
              z * dot * (1 - cosA)
         ];
-        console.log("term1[0] + term2[0] + term3[0]: ",term1[0] + term2[0] + term3[0]);
+        //console.log("term1[0] + term2[0] + term3[0]: ",term1[0] + term2[0] + term3[0]);
         return new Cesium.Cartesian3(
             term1[0] + term2[0] + term3[0],
             term1[1] + term2[1] + term3[1],
