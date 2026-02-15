@@ -368,7 +368,8 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // Listen for camera changes
-window.viewer.camera.changed.addEventListener(findClosestFaceCenter);
+//window.viewer.camera.changed.addEventListener(findClosestFaceCenter);
+window.viewer.camera.changed.addEventListener(findEnclosingTriangle);
 // Listen for camera changes
 window.viewer.camera.changed.addEventListener(updateCameraLabel);
 
@@ -382,8 +383,8 @@ function addPolygons(facesGeoPositions,parentEntity) {
     
     //facesPositions.forEach(positions => {
     //    addPolygon(positions);
-    console.log("A: ",facesGeoPositions[1].vertices);
-    console.log("C: ",facesGeoPositions[0].vertices);
+    //console.log("A: ",facesGeoPositions[1].vertices);
+    //console.log("C: ",facesGeoPositions[0].vertices);
     facesGeoPositions.forEach(faceObj => {
         addPolygon(faceObj.vertices, faceObj.faceId, parentEntity, faceObj.center);
         window.triangles.push(faceObj);
@@ -437,6 +438,10 @@ function updateCameraLabel() {
 
 }
 
+// Seems not to be optimized
+// The right way would be :
+// - to divide the triangle in 4
+// - for each edge of the triangle in the middle, find in which hemisphere the camera is
 function findClosestFaceCenter() {
     const viewer = window.fullerData.viewer;
     const facesGeoPositions = window.fullerData.facesGeoPositions;
@@ -531,6 +536,189 @@ function findClosestFaceCenter() {
     }
 }
 
+//the purpose of this function is to replace findClosestFaceCenter with an optimized version
+function findEnclosingTriangle() {
+    const viewer = window.fullerData.viewer;
+    const facesGeoPositions = window.fullerData.facesGeoPositions;
+    if (!viewer || !facesGeoPositions) return;
+
+    // Get camera position in Cartesian3
+    const cameraCartographic = viewer.camera.positionCartographic;
+    
+    const cameraCartesian = Cesium.Cartesian3.fromRadians(
+        cameraCartographic.longitude,
+        cameraCartographic.latitude,
+        0
+    );
+    const levelIndex = getLevelIndex(cameraCartographic.height);
+    //console.log("levelIndex: ", levelIndex);
+    //console.log("entitiesLevels.length: ", entitiesLevels.length);
+
+    //create levels if not exist
+    createLevels(levelIndex);
+    //hide all levels except current
+    for (let i = 0; i < entitiesLevels.length; i++) {
+        entitiesLevels[i].show = (i === levelIndex);
+    //    console.log("Show: ", i);
+    //    console.log("show: ", i === levelIndex);
+    }
+    // Find the closest icosahedron face to the camera
+    let minDist = Number.POSITIVE_INFINITY;
+    let closestFace = null;
+    facesGeoPositions.forEach(faceObj => {
+        const dist = Cesium.Cartesian3.distance(cameraCartesian, faceObj.center);
+            if (dist < minDist) {
+                minDist = dist;
+                closestFace = faceObj;
+            }
+ //       }
+    });
+    //check, at each level, if the two closest subtriangles are already added
+    for (let i = 0; i < levelIndex; i++) {
+
+        
+        addSubtriangles(closestFace, i);
+ //       addSubtriangles(secondClosestFace, i);
+        
+        //find the face enclosing the point for the next level
+// Naming convention for points and mid-points:
+//
+//                   a [0]               
+//                   /\                  
+//                  /1 \                 
+//            ac_a /____\ a_ab          
+//                /\  2 /\               
+//               /15\  /3 \              
+//           ac /__ ac_ab _\ ab         
+//             /\ 14 /\  4 /\            
+//            /13\  /0 \  / 5\           
+//      c_ac /_ bc_ac  ab_bc _\ ab_b     
+//          /\12  /\    /\    /\         
+//         /11\  /10\ 9/ 8\ 7/6 \        
+//        /____\/____\/____\/____\       
+//   [2] c    bc_c   bc    b_bc   b [1] 
+//
+
+        // First-level midpoints
+        let p_ab = midpoint(closestFace.vertices[0], closestFace.vertices[1]);
+        let p_bc = midpoint(closestFace.vertices[1], closestFace.vertices[2]);
+        let p_ac = midpoint(closestFace.vertices[0], closestFace.vertices[2]);
+        let p_ab_bc = midpoint(p_ab, p_bc);
+        let p_bc_ac = midpoint(p_bc, p_ac);
+        let p_ac_ab = midpoint(p_ac, p_ab);
+
+        console.log("p_ab: ", p_ab);
+
+        //in icosahedron.json the vertices of the faces are in the clockwise order
+        
+        let cp = cross_product(p_ab, p_bc);
+        let dp = dot_product(cp, cameraCartesian);
+        if (dp > 0) {
+            
+            let p_ab_b= midpoint(closestFace.vertices[1], p_ab);
+            cp = cross_product(p_ab_bc, p_ab_b);
+            dp = dot_product(cp, cameraCartesian);
+            if (dp > 0) {
+                nextClosestFace = closestFace.subFaces[5];
+            } else {
+                let p_b_bc = midpoint(closestFace.vertices[1], p_bc);
+                cp = cross_product(p_ab_b, p_b_bc);
+                dp = dot_product(cp, cameraCartesian);
+                if (dp > 0) {
+                    nextClosestFace = closestFace.subFaces[6];
+                } else {
+                    cp = cross_product(p_b_bc, p_ab_bc);
+                    dp = dot_product(cp, cameraCartesian);
+                    if (dp > 0) {
+                        nextClosestFace = closestFace.subFaces[8];
+                    } else {
+                        nextClosestFace = closestFace.subFaces[7];
+                    }
+                }
+            }
+        } else {
+            cp = cross_product(p_ac, p_ab);
+            dp = dot_product(cp, cameraCartesian);
+            if (dp > 0) {
+                cp = cross_product(closestFace.ac_a, closestFace.a_ab);
+                dp = dot_product(cp, cameraCartesian);
+                if (dp > 0) {
+                    nextClosestFace = closestFace.subFaces[1];
+                } else {
+                    cp = cross_product(closestFace.a_ab, closestFace.ac_ab);
+                    dp = dot_product(cp, cameraCartesian);
+                    if (dp > 0) {
+                        nextClosestFace = closestFace.subFaces[3];
+                    } else {
+                        cp = cross_product(closestFace.ac_ab, closestFace.ac_a);
+                        dp = dot_product(cp, cameraCartesian);
+                        if (dp > 0) {
+                            nextClosestFace = closestFace.subFaces[15];
+                        } else {
+                            nextClosestFace = closestFace.subFaces[2];
+                        }
+                    }
+                }
+            }
+            else {
+                cp = cross_product(p_bc, p_ac);
+                dp = dot_product(cp, cameraCartesian);
+                if (dp > 0) {
+                    cp = cross_product(closestFace.ac, closestFace.bc_ac);
+                    dp = dot_product(cp, cameraCartesian);
+                    if (dp > 0) {
+                        nextClosestFace = closestFace.subFaces[13];
+                    } else {
+                        cp = cross_product(closestFace.bc_ac, closestFace.bc_c);
+                        dp = dot_product(cp, cameraCartesian);
+                        if (dp > 0) {
+                            nextClosestFace = closestFace.subFaces[10];
+                        } else {
+                            cp = cross_product(closestFace.bc_c, closestFace.c_ac);
+                            dp = dot_product(cp, cameraCartesian);
+                            if (dp > 0) {
+                                nextClosestFace = closestFace.subFaces[11];
+                            } else {
+                                nextClosestFace = closestFace.subFaces[12];
+                            }
+                        }
+                    }
+                }
+                else {
+                //The closest sutriangle is inside ac, ab, bc
+                    cp = cross_product(closestFace.ac_ab, closestFace.ab_bc);
+                    dp = dot_product(cp, cameraCartesian);
+                    if (dp > 0) {
+                        nextClosestFace = closestFace.subFaces[4];
+                    } else {
+                        cp = cross_product(closestFace.ab_bc, closestFace.bc_ac);
+                        dp = dot_product(cp, cameraCartesian);
+                        if (dp > 0) {
+                            nextClosestFace = closestFace.subFaces[9];
+                        } else {
+                            cp = cross_product(closestFace.bc_ac, closestFace.ac_ab);
+                            dp = dot_product(cp, cameraCartesian);
+                            if (dp > 0) {
+                                nextClosestFace = closestFace.subFaces[14];
+                            } else {
+                                nextClosestFace = closestFace.subFaces[0];
+                            }
+                        }
+                    } 
+                }
+            }
+        }
+
+        closestFace = nextClosestFace;
+
+        fullerCodeLabel.textContent =
+        `fullercode: ${closestFace.faceId}`;
+        positionCopyButton();
+        console.log("closest: ", closestFace.faceId);
+        console.log("second closest: ", secondClosestFace.faceId);
+    }
+}
+
 function addSubtriangles(closestFace, i) {
     if (!closestFace || !window.fullerData || !window.fullerData.viewer) return;
     
@@ -540,15 +728,15 @@ function addSubtriangles(closestFace, i) {
     if (!alreadyAdded) {
         addedSub.push(closestFace.faceId);
         let st = new Subtriangles(closestFace);
-        console.log("st A: ", st.subFaces[1].vertices);
+        //console.log("st A: ", st.subFaces[1].vertices);
         addPolygons(st.subFaces, entitiesLevels[i + 1]);
     }
 }
 
 function createLevels(levelIndex) {
     const viewer = window.fullerData.viewer;
-    console.log("entitiesLevels.length: ", entitiesLevels.length);
-    console.log("Creating levels up to: ", levelIndex);
+    //console.log("entitiesLevels.length: ", entitiesLevels.length);
+    //console.log("Creating levels up to: ", levelIndex);
     for (let i = entitiesLevels.length; i <= levelIndex; i++) {
         console.log("Creating level:", i);
         var level = viewer.entities.add(new Cesium.Entity());

@@ -2,7 +2,7 @@
 
 window.fullerData = {}; // Objet global pour partager les donn�es
 window.radius = 6371010
-//fetch("icosaedre.json")
+
 fetch("icosahedron.json")
     .then(response => response.json())
     .then(data => {
