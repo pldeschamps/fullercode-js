@@ -44,6 +44,21 @@ class Subtriangles {
         this.c_ac = Subtriangles.midpoint(this.c, this.ac);
         this.ac_a = Subtriangles.midpoint(this.ac, this.a);
 
+        this.faceGeoPos.ab = this.ab;
+        this.faceGeoPos.bc = this.bc;
+        this.faceGeoPos.ac = this.ac;
+        this.faceGeoPos.ac_ab = this.ac_ab;
+        this.faceGeoPos.ab_bc = this.ab_bc;
+        this.faceGeoPos.bc_ac = this.bc_ac;
+        this.faceGeoPos.a_ab = this.a_ab;
+        this.faceGeoPos.ab_b = this.ab_b;
+        this.faceGeoPos.b_bc = this.b_bc;
+        this.faceGeoPos.bc_c = this.bc_c;
+        this.faceGeoPos.c_ac = this.c_ac;
+        this.faceGeoPos.ac_a = this.ac_a;
+
+
+
         //  strangely, the following point is not equal to this.ab_bc
         //  this.ac_ab_b_bc = Subtriangles.midpoint(this.ac_ab, this.b_bc);
         // Why is this.ac_ab_b_bc != this.ab_bc ? Because in spherical geometry, it is not possible
@@ -77,6 +92,7 @@ class Subtriangles {
             // faceGeoPos is an up triangle, so we keep the orientation of its subtriangles
             ids = faceGeoPos.subtrianglesIds.split('');
         }
+        faceGeoPos.ids = ids;
         // console.log(ids[0]);
         // console.log("A: ",[this.a, this.a_ab, this.ac_a]);
         // Define 16 subtriangles (each as a FacesGeoPositions)

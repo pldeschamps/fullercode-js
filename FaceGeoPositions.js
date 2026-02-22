@@ -5,6 +5,19 @@ class FaceGeoPositions {
         this.subtrianglesIds = subtrianglesIds; // String of subtriangle IDs
         this.center = this.computeCenter();
         this.parentOrientation = parentOrientation; // true for up, false for down
+        this.ab;
+        this.bc;
+        this.ac;
+        this.ac_ab;
+        this.ab_bc;
+        this.bc_ac;
+        this.a_ab;
+        this.ab_b;
+        this.b_bc;
+        this.bc_c;
+        this.c_ac;
+        this.ac_a;
+        this.ids=[];
     }
 
     // Compute the centroid in Cartesian coordinates

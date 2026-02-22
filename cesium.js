@@ -335,6 +335,16 @@ window.entities = window.viewer.entities;
 window.LevelHeights = [6500000, 2600000, 1000000, 200000, 100000,10000,1800,700,170,50,10];
 window.triangles = []; // To store subdivided triangles
 
+window.entities.add({
+    id:"camera",
+    position: Cesium.Cartesian3.fromDegrees(0, 0, 0),
+    point: { pixelSize: 3, color: Cesium.Color.RED },
+    heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+    label: { text: "your position", font: "24px sans-serif", pixelOffset: new Cesium.Cartesian2(0, -12),
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND 
+     }
+    });
+
 const entitiesLevels = [];
 var level0 = viewer.entities.add(new Cesium.Entity());
 entitiesLevels.push(level0);
@@ -401,7 +411,8 @@ function addPolygon(positions, triangleId, parentEntity,center) {
                 material: Cesium.Color.BLUE.withAlpha(0.05),
                 outline: true,
                 outlineWidth: 5,
-                outlineColor: Cesium.Color.MAGENTA
+                outlineColor: Cesium.Color.MAGENTA,
+                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
             }
     });
     const labelFont = (32 - triangleId.length).toString()+"px Consolas";
@@ -413,7 +424,7 @@ function addPolygon(positions, triangleId, parentEntity,center) {
         label: {
             text: `${triangleId}`, font: labelFont,
             fillColor: Cesium.Color.MAGENTA.withAlpha(0.9),
-            heightReference: 1
+            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
         }
     });
     }
@@ -427,8 +438,11 @@ function updateCameraLabel() {
     const cameraCartesian = Cesium.Cartesian3.fromRadians(
         cameraCartographic.longitude,
         cameraCartographic.latitude,
-        cameraCartographic.height
+        0
     );
+    //cameraCartographic.heightReference = Cesium.HeightReference.CLAMP_TO_GROUND;
+    // TODO: pourquoi sans effet ? la position du label ne suit pas le terrain, même en mettant heightReference à CLAMP_TO_GROUND
+    //cameraCartographic.height = 6371010;
     const lat = Cesium.Math.toDegrees(cameraCartographic.latitude).toFixed(6);
     const lon = Cesium.Math.toDegrees(cameraCartographic.longitude).toFixed(6);
     console.log("Lat: ", lat, " Lon: ", lon, " Alt: ", cameraCartographic.height.toFixed(0));
@@ -442,7 +456,7 @@ function updateCameraLabel() {
 // The right way would be :
 // - to divide the triangle in 4
 // - for each edge of the triangle in the middle, find in which hemisphere the camera is
-function findClosestFaceCenter() {
+/* function findClosestFaceCenter() {
     const viewer = window.fullerData.viewer;
     const facesGeoPositions = window.fullerData.facesGeoPositions;
     if (!viewer || !facesGeoPositions) return;
@@ -535,7 +549,7 @@ function findClosestFaceCenter() {
         console.log("second closest: ", secondClosestFace.faceId);
     }
 }
-
+ */
 //the purpose of this function is to replace findClosestFaceCenter with an optimized version
 function findEnclosingTriangle() {
     const viewer = window.fullerData.viewer;
@@ -545,11 +559,37 @@ function findEnclosingTriangle() {
     // Get camera position in Cartesian3
     const cameraCartographic = viewer.camera.positionCartographic;
     
-    const cameraCartesian = Cesium.Cartesian3.fromRadians(
+    let cameraCartesian = Cesium.Cartesian3.fromRadians(
         cameraCartographic.longitude,
         cameraCartographic.latitude,
-        0
+        6372010
     );
+    console.log("Camera Cartesian height: ", cameraCartesian);
+    viewer.entities.getById("camera").position = cameraCartesian;
+    // undefined: viewer.entities.getById("camera").position.height
+    // undefined: viewer.entities.getById("camera").position.heightReference);
+
+    viewer.entities.getById("camera").heightReference = Cesium.HeightReference.CLAMP_TO_GROUND;
+    //TODO: pourquoi sans effet ?
+    viewer.entities.getById("camera").height = 0;
+    //TODO: pourquoi sans effet ?
+
+    console.log("camera height reference: ", viewer.entities.getById("camera").heightReference);
+    console.log("Cesium.HeightReference.CLAMP_TO_GROUND: ", Cesium.HeightReference.CLAMP_TO_GROUND);
+
+/*     let x = cameraCartesian.x;
+    let y = cameraCartesian.y;
+    let z = cameraCartesian.z;
+    let length = Math.sqrt(x * x + y * y + z * z);
+    x = x / length;
+    y = y / length;
+    z = z / length;
+    x = x * window.radius;
+    y = y * window.radius;
+    z = z * window.radius;
+    cameraCartesian = Cesium.Cartesian3.fromElements(x, y, z); */
+    cameraCartesian.heightReference = Cesium.HeightReference.CLAMP_TO_GROUND;
+
     const levelIndex = getLevelIndex(cameraCartographic.height);
     //console.log("levelIndex: ", levelIndex);
     //console.log("entitiesLevels.length: ", entitiesLevels.length);
@@ -575,8 +615,6 @@ function findEnclosingTriangle() {
     });
     //check, at each level, if the two closest subtriangles are already added
     for (let i = 0; i < levelIndex; i++) {
-
-        
         addSubtriangles(closestFace, i);
  //       addSubtriangles(secondClosestFace, i);
         
@@ -600,39 +638,39 @@ function findEnclosingTriangle() {
 //
 
         // First-level midpoints
-        let p_ab = midpoint(closestFace.vertices[0], closestFace.vertices[1]);
-        let p_bc = midpoint(closestFace.vertices[1], closestFace.vertices[2]);
-        let p_ac = midpoint(closestFace.vertices[0], closestFace.vertices[2]);
-        let p_ab_bc = midpoint(p_ab, p_bc);
-        let p_bc_ac = midpoint(p_bc, p_ac);
-        let p_ac_ab = midpoint(p_ac, p_ab);
-
-        console.log("p_ab: ", p_ab);
+        let p_ab = closestFace.ab;
+        let p_bc = closestFace.bc;
+        let p_ac = closestFace.ac;
+        let p_ab_bc = closestFace.ab_bc;
+        let p_bc_ac = closestFace.bc_ac;
+        let p_ac_ab = closestFace.ac_ab;
 
         //in icosahedron.json the vertices of the faces are in the clockwise order
-        
+        let enclosingTriangleId = -1;
+        let nextClosestFace = null;
+
         let cp = cross_product(p_ab, p_bc);
         let dp = dot_product(cp, cameraCartesian);
         if (dp > 0) {
             
-            let p_ab_b= midpoint(closestFace.vertices[1], p_ab);
+            let p_ab_b= closestFace.ab_b;
             cp = cross_product(p_ab_bc, p_ab_b);
             dp = dot_product(cp, cameraCartesian);
             if (dp > 0) {
-                nextClosestFace = closestFace.subFaces[5];
+                enclosingTriangleId = 5;
             } else {
-                let p_b_bc = midpoint(closestFace.vertices[1], p_bc);
+                let p_b_bc = closestFace.b_bc;
                 cp = cross_product(p_ab_b, p_b_bc);
                 dp = dot_product(cp, cameraCartesian);
                 if (dp > 0) {
-                    nextClosestFace = closestFace.subFaces[6];
+                    enclosingTriangleId = 6;
                 } else {
                     cp = cross_product(p_b_bc, p_ab_bc);
                     dp = dot_product(cp, cameraCartesian);
                     if (dp > 0) {
-                        nextClosestFace = closestFace.subFaces[8];
+                        enclosingTriangleId = 8;
                     } else {
-                        nextClosestFace = closestFace.subFaces[7];
+                        enclosingTriangleId = 7;
                     }
                 }
             }
@@ -643,19 +681,19 @@ function findEnclosingTriangle() {
                 cp = cross_product(closestFace.ac_a, closestFace.a_ab);
                 dp = dot_product(cp, cameraCartesian);
                 if (dp > 0) {
-                    nextClosestFace = closestFace.subFaces[1];
+                    enclosingTriangleId = 1;
                 } else {
                     cp = cross_product(closestFace.a_ab, closestFace.ac_ab);
                     dp = dot_product(cp, cameraCartesian);
                     if (dp > 0) {
-                        nextClosestFace = closestFace.subFaces[3];
+                        enclosingTriangleId = 3;
                     } else {
                         cp = cross_product(closestFace.ac_ab, closestFace.ac_a);
                         dp = dot_product(cp, cameraCartesian);
                         if (dp > 0) {
-                            nextClosestFace = closestFace.subFaces[15];
+                            enclosingTriangleId = 15;
                         } else {
-                            nextClosestFace = closestFace.subFaces[2];
+                            enclosingTriangleId = 2;
                         }
                     }
                 }
@@ -667,19 +705,19 @@ function findEnclosingTriangle() {
                     cp = cross_product(closestFace.ac, closestFace.bc_ac);
                     dp = dot_product(cp, cameraCartesian);
                     if (dp > 0) {
-                        nextClosestFace = closestFace.subFaces[13];
+                        enclosingTriangleId = 13;
                     } else {
                         cp = cross_product(closestFace.bc_ac, closestFace.bc_c);
                         dp = dot_product(cp, cameraCartesian);
                         if (dp > 0) {
-                            nextClosestFace = closestFace.subFaces[10];
+                            enclosingTriangleId = 10;
                         } else {
                             cp = cross_product(closestFace.bc_c, closestFace.c_ac);
                             dp = dot_product(cp, cameraCartesian);
                             if (dp > 0) {
-                                nextClosestFace = closestFace.subFaces[11];
+                                enclosingTriangleId = 11;
                             } else {
-                                nextClosestFace = closestFace.subFaces[12];
+                                enclosingTriangleId = 12;
                             }
                         }
                     }
@@ -689,19 +727,19 @@ function findEnclosingTriangle() {
                     cp = cross_product(closestFace.ac_ab, closestFace.ab_bc);
                     dp = dot_product(cp, cameraCartesian);
                     if (dp > 0) {
-                        nextClosestFace = closestFace.subFaces[4];
+                        enclosingTriangleId = 4;
                     } else {
                         cp = cross_product(closestFace.ab_bc, closestFace.bc_ac);
                         dp = dot_product(cp, cameraCartesian);
                         if (dp > 0) {
-                            nextClosestFace = closestFace.subFaces[9];
+                            enclosingTriangleId = 9;
                         } else {
                             cp = cross_product(closestFace.bc_ac, closestFace.ac_ab);
                             dp = dot_product(cp, cameraCartesian);
                             if (dp > 0) {
-                                nextClosestFace = closestFace.subFaces[14];
+                                enclosingTriangleId = 14;
                             } else {
-                                nextClosestFace = closestFace.subFaces[0];
+                                enclosingTriangleId = 0;
                             }
                         }
                     } 
@@ -709,13 +747,18 @@ function findEnclosingTriangle() {
             }
         }
 
-        closestFace = nextClosestFace;
-
+        
+        let nextClosestFaceId = closestFace.faceId + closestFace.ids[enclosingTriangleId];
+        closestFace = window.triangles.find(t => t.faceId === nextClosestFaceId);
+        if (!closestFace) {
+            console.log("Could not find face with id: ", nextClosestFaceId);
+            return;
+        }
+        console.log("closest: ", closestFace.center);
         fullerCodeLabel.textContent =
         `fullercode: ${closestFace.faceId}`;
         positionCopyButton();
-        console.log("closest: ", closestFace.faceId);
-        console.log("second closest: ", secondClosestFace.faceId);
+
     }
 }
 
@@ -727,6 +770,7 @@ function addSubtriangles(closestFace, i) {
     //console.log("alreadyAdded: ", alreadyAdded);
     if (!alreadyAdded) {
         addedSub.push(closestFace.faceId);
+        console.log("calling Subtriangles for: ", closestFace.faceId);
         let st = new Subtriangles(closestFace);
         //console.log("st A: ", st.subFaces[1].vertices);
         addPolygons(st.subFaces, entitiesLevels[i + 1]);
