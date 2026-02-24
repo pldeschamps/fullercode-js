@@ -337,7 +337,7 @@ window.triangles = []; // To store subdivided triangles
 
 window.entities.add({
     id:"camera",
-    position: Cesium.Cartesian3.fromDegrees(0, 0, 0),
+    position: Cesium.Cartesian3.fromDegrees(0, 90, 0),
     point: { pixelSize: 3, color: Cesium.Color.RED },
     heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
     label: { text: "your position", font: "24px sans-serif", pixelOffset: new Cesium.Cartesian2(0, -12),
@@ -562,7 +562,7 @@ function findEnclosingTriangle() {
     let cameraCartesian = Cesium.Cartesian3.fromRadians(
         cameraCartographic.longitude,
         cameraCartographic.latitude,
-        6372010
+        1
     );
     console.log("Camera Cartesian height: ", cameraCartesian);
     viewer.entities.getById("camera").position = cameraCartesian;
@@ -641,9 +641,6 @@ function findEnclosingTriangle() {
         let p_ab = closestFace.ab;
         let p_bc = closestFace.bc;
         let p_ac = closestFace.ac;
-        let p_ab_bc = closestFace.ab_bc;
-        let p_bc_ac = closestFace.bc_ac;
-        let p_ac_ab = closestFace.ac_ab;
 
         //in icosahedron.json the vertices of the faces are in the clockwise order
         let enclosingTriangleId = -1;
@@ -654,7 +651,7 @@ function findEnclosingTriangle() {
         if (dp > 0) {
             
             let p_ab_b= closestFace.ab_b;
-            cp = cross_product(p_ab_bc, p_ab_b);
+            cp = cross_product(closestFace.ab_bc, p_ab_b);
             dp = dot_product(cp, cameraCartesian);
             if (dp > 0) {
                 enclosingTriangleId = 5;
@@ -665,7 +662,7 @@ function findEnclosingTriangle() {
                 if (dp > 0) {
                     enclosingTriangleId = 6;
                 } else {
-                    cp = cross_product(p_b_bc, p_ab_bc);
+                    cp = cross_product(p_b_bc, closestFace.ab_bc);
                     dp = dot_product(cp, cameraCartesian);
                     if (dp > 0) {
                         enclosingTriangleId = 8;
@@ -702,7 +699,7 @@ function findEnclosingTriangle() {
                 cp = cross_product(p_bc, p_ac);
                 dp = dot_product(cp, cameraCartesian);
                 if (dp > 0) {
-                    cp = cross_product(closestFace.ac, closestFace.bc_ac);
+                    cp = cross_product(closestFace.c_ac, closestFace.bc_ac);
                     dp = dot_product(cp, cameraCartesian);
                     if (dp > 0) {
                         enclosingTriangleId = 13;
