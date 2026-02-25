@@ -445,7 +445,7 @@ function updateCameraLabel() {
     //cameraCartographic.height = 6371010;
     const lat = Cesium.Math.toDegrees(cameraCartographic.latitude).toFixed(6);
     const lon = Cesium.Math.toDegrees(cameraCartographic.longitude).toFixed(6);
-    console.log("Lat: ", lat, " Lon: ", lon, " Alt: ", cameraCartographic.height.toFixed(0));
+    //console.log("Lat: ", lat, " Lon: ", lon, " Alt: ", cameraCartographic.height.toFixed(0));
     cameraLabel.textContent =
         `Lat: ${lat} Lon: ${lon} Alt: ${cameraCartographic.height.toFixed(0)}`;
 
@@ -564,7 +564,7 @@ function findEnclosingTriangle() {
         cameraCartographic.latitude,
         1
     );
-    console.log("Camera Cartesian height: ", cameraCartesian);
+    //console.log("Camera Cartesian height: ", cameraCartesian);
     viewer.entities.getById("camera").position = cameraCartesian;
     // undefined: viewer.entities.getById("camera").position.height
     // undefined: viewer.entities.getById("camera").position.heightReference);
@@ -574,8 +574,8 @@ function findEnclosingTriangle() {
     viewer.entities.getById("camera").height = 0;
     //TODO: pourquoi sans effet ?
 
-    console.log("camera height reference: ", viewer.entities.getById("camera").heightReference);
-    console.log("Cesium.HeightReference.CLAMP_TO_GROUND: ", Cesium.HeightReference.CLAMP_TO_GROUND);
+    //console.log("camera height reference: ", viewer.entities.getById("camera").heightReference);
+    //console.log("Cesium.HeightReference.CLAMP_TO_GROUND: ", Cesium.HeightReference.CLAMP_TO_GROUND);
 
 /*     let x = cameraCartesian.x;
     let y = cameraCartesian.y;
@@ -638,32 +638,66 @@ function findEnclosingTriangle() {
 //
 
         // First-level midpoints
-        let p_ab = closestFace.ab;
-        let p_bc = closestFace.bc;
-        let p_ac = closestFace.ac;
+        let p_ab = new window.CartesianCoord(closestFace.ab);
+        let p_bc = new window.CartesianCoord(closestFace.bc);
+        let p_ac = new window.CartesianCoord(closestFace.ac);
 
+        // Second-level midpoints
+        let p_a_ab = new window.CartesianCoord(closestFace.a_ab);
+        let p_ab_b = new window.CartesianCoord(closestFace.ab_b);
+        let p_b_bc = new window.CartesianCoord(closestFace.b_bc);
+        let p_bc_c = new window.CartesianCoord(closestFace.bc_c);
+        let p_c_ac = new window.CartesianCoord(closestFace.c_ac);
+        let p_ac_a = new window.CartesianCoord(closestFace.ac_a);
+
+
+        // Third-level midpoints
+        let p_ab_bc = new CartesianCoord(closestFace.ab_bc);
+        let p_bc_ac = new CartesianCoord(closestFace.bc_ac);
+        let p_ac_ab = new CartesianCoord(closestFace.ac_ab);
+
+        let cameraNormalized = new CartesianCoord(cameraCartesian);
         //in icosahedron.json the vertices of the faces are in the clockwise order
         let enclosingTriangleId = -1;
         let nextClosestFace = null;
 
+        const th = 1;
+
+        if (i > th) {
+            console.log("closestFace: ", closestFace.faceId);
+            console.log("cameraCartesian: ", cameraNormalized);
+        }
         let cp = cross_product(p_ab, p_bc);
-        let dp = dot_product(cp, cameraCartesian);
+        let dp = dot_product(cp, cameraNormalized);
+        if(i > th) {
+            console.log("p_ab, p_bc, cp: ", p_ab, p_bc, cp);
+            console.log("dp: ", dp);
+        }
         if (dp > 0) {
-            
-            let p_ab_b= closestFace.ab_b;
-            cp = cross_product(closestFace.ab_bc, p_ab_b);
-            dp = dot_product(cp, cameraCartesian);
+            cp = cross_product(p_ab_bc, p_ab_b);
+            dp = dot_product(cp, cameraNormalized);
+            if(i > th) {
+            console.log("closestFace.ab_bc, p_ab_b: ", p_ab_bc, p_ab_b, cp);
+            console.log("dp: ", dp);
+        }
             if (dp > 0) {
                 enclosingTriangleId = 5;
             } else {
-                let p_b_bc = closestFace.b_bc;
                 cp = cross_product(p_ab_b, p_b_bc);
-                dp = dot_product(cp, cameraCartesian);
+                dp = dot_product(cp, cameraNormalized);
+                if(i > th) {
+            console.log("p_ab_b, p_b_bc, cp: ", p_ab_b, p_b_bc, cp);
+            console.log("dp: ", dp);
+        }
                 if (dp > 0) {
                     enclosingTriangleId = 6;
                 } else {
-                    cp = cross_product(p_b_bc, closestFace.ab_bc);
-                    dp = dot_product(cp, cameraCartesian);
+                    cp = cross_product(p_b_bc, p_ab_bc);
+                    dp = dot_product(cp, cameraNormalized);
+                    if(i > th) {
+            console.log("p_b_bc, p_ab_bc, cp: ", p_b_bc, p_ab_bc, cp);
+            console.log("dp: ", dp);
+        }
                     if (dp > 0) {
                         enclosingTriangleId = 8;
                     } else {
@@ -673,20 +707,36 @@ function findEnclosingTriangle() {
             }
         } else {
             cp = cross_product(p_ac, p_ab);
-            dp = dot_product(cp, cameraCartesian);
+            dp = dot_product(cp, cameraNormalized);
+                if(i > th) {
+            console.log("p_ac, p_ab, cp: ", p_ac, p_ab, cp);
+            console.log("dp: ", dp);
+        }
             if (dp > 0) {
-                cp = cross_product(closestFace.ac_a, closestFace.a_ab);
-                dp = dot_product(cp, cameraCartesian);
+                cp = cross_product(p_ac_a, p_a_ab);
+                dp = dot_product(cp, cameraNormalized);
+                    if(i > th) {
+            console.log("p_ac_a, p_a_ab, cp: ", p_ac_a, p_a_ab, cp);
+            console.log("dp: ", dp);
+        }
                 if (dp > 0) {
                     enclosingTriangleId = 1;
                 } else {
-                    cp = cross_product(closestFace.a_ab, closestFace.ac_ab);
-                    dp = dot_product(cp, cameraCartesian);
+                    cp = cross_product(p_a_ab, p_ac_ab);
+                    dp = dot_product(cp, cameraNormalized);
+                    if(i > th) {
+            console.log("p_a_ab, p_ac_ab, cp: ", p_a_ab, p_ac_ab, cp);
+            console.log("dp: ", dp);
+        }
                     if (dp > 0) {
                         enclosingTriangleId = 3;
                     } else {
-                        cp = cross_product(closestFace.ac_ab, closestFace.ac_a);
-                        dp = dot_product(cp, cameraCartesian);
+                        cp = cross_product(p_ac_ab, p_ac_a);
+                        dp = dot_product(cp, cameraNormalized);
+                        if(i > th) {
+            console.log("p_ac_ab, p_ac_a, cp: ", p_ac_ab, p_ac_a, cp);
+            console.log("dp: ", dp);
+        }
                         if (dp > 0) {
                             enclosingTriangleId = 15;
                         } else {
@@ -697,20 +747,32 @@ function findEnclosingTriangle() {
             }
             else {
                 cp = cross_product(p_bc, p_ac);
-                dp = dot_product(cp, cameraCartesian);
+                dp = dot_product(cp, cameraNormalized);
+                if(i > th) {
+            console.log("p_bc, p_ac, cp: ", p_bc, p_ac, cp);
+            console.log("dp: ", dp);
+        }
                 if (dp > 0) {
-                    cp = cross_product(closestFace.c_ac, closestFace.bc_ac);
-                    dp = dot_product(cp, cameraCartesian);
+                    cp = cross_product(p_c_ac, p_bc_ac);
+                    dp = dot_product(cp, cameraNormalized);
+                    if(i > th) {
+            console.log("p_c_ac, p_bc_ac, cp: ", p_c_ac, p_bc_ac, cp);
+            console.log("dp: ", dp);
+        }
                     if (dp > 0) {
                         enclosingTriangleId = 13;
                     } else {
-                        cp = cross_product(closestFace.bc_ac, closestFace.bc_c);
-                        dp = dot_product(cp, cameraCartesian);
+                        cp = cross_product(p_bc_ac, p_bc_c);
+                        dp = dot_product(cp, cameraNormalized);
+                        if(i > th) {
+            console.log("p_bc_ac, p_bc_c, cp: ", p_bc_ac, p_bc_c, cp);
+            console.log("dp: ", dp);
+        }
                         if (dp > 0) {
                             enclosingTriangleId = 10;
                         } else {
-                            cp = cross_product(closestFace.bc_c, closestFace.c_ac);
-                            dp = dot_product(cp, cameraCartesian);
+                            cp = cross_product(p_bc_c, p_c_ac);
+                            dp = dot_product(cp, cameraNormalized);
                             if (dp > 0) {
                                 enclosingTriangleId = 11;
                             } else {
@@ -721,18 +783,18 @@ function findEnclosingTriangle() {
                 }
                 else {
                 //The closest sutriangle is inside ac, ab, bc
-                    cp = cross_product(closestFace.ac_ab, closestFace.ab_bc);
-                    dp = dot_product(cp, cameraCartesian);
+                    cp = cross_product(p_ac_ab, p_ab_bc);
+                    dp = dot_product(cp, cameraNormalized);
                     if (dp > 0) {
                         enclosingTriangleId = 4;
                     } else {
-                        cp = cross_product(closestFace.ab_bc, closestFace.bc_ac);
-                        dp = dot_product(cp, cameraCartesian);
+                        cp = cross_product(p_ab_bc, p_bc_ac);
+                        dp = dot_product(cp, cameraNormalized);
                         if (dp > 0) {
                             enclosingTriangleId = 9;
                         } else {
-                            cp = cross_product(closestFace.bc_ac, closestFace.ac_ab);
-                            dp = dot_product(cp, cameraCartesian);
+                            cp = cross_product(p_bc_ac, p_ac_ab);
+                            dp = dot_product(cp, cameraNormalized);
                             if (dp > 0) {
                                 enclosingTriangleId = 14;
                             } else {
@@ -751,7 +813,7 @@ function findEnclosingTriangle() {
             console.log("Could not find face with id: ", nextClosestFaceId);
             return;
         }
-        console.log("closest: ", closestFace.center);
+        //console.log("closest: ", closestFace.center);
         fullerCodeLabel.textContent =
         `fullercode: ${closestFace.faceId}`;
         positionCopyButton();
