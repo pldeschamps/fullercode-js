@@ -518,9 +518,11 @@ function findEnclosingTriangle() {
     //check, at each level, if the two closest subtriangles are already added
     for (let i = 0; i < levelIndex; i++) {
         addSubtriangles(closestFace, i);
- //       addSubtriangles(secondClosestFace, i);
+        if (i<7) {
         
-        //find the face enclosing the point for the next level
+        // find the face enclosing the point for the next level
+        // using spherical method based on cross and dot products
+
 // Naming convention for points and mid-points:
 //
 //                   a [0]               
@@ -694,10 +696,91 @@ function findEnclosingTriangle() {
         fullerCodeLabel.textContent =
         `fullercode: ${closestFace.faceId}`;
         positionCopyButton();
+        }
+        else {
+            // i>=7
+            // use cartesian 2D method to find closest face
 
+        }
     }
 }
 
+function get2DEnclosingTriangle(faceGeo, cameraCartesian) {
+    // project the 3D points to 2D using gnomonic projection centered on the face center
+    // then use barycentric coordinates to find which triangle contains the camera point
+    // this method is more robust for very close faces and avoids numerical issues with cross/dot products
+
+    // Définir le repère 2D
+    // Origine : faceGeo.vertices[0]
+    const origin = faceGeo.vertices[0];
+    
+    // Vecteur base 1 : de vertices[0] à vertices[1]
+    const b1 = new window.CartesianCoord(
+        faceGeo.vertices[1].x - origin.x,
+        faceGeo.vertices[1].y - origin.y,
+        faceGeo.vertices[1].z - origin.z
+    );
+    
+    // Vecteur base 2 : de vertices[0] à vertices[2]
+    const b2 = new window.CartesianCoord(
+        faceGeo.vertices[2].x - origin.x,
+        faceGeo.vertices[2].y - origin.y,
+        faceGeo.vertices[2].z - origin.z
+    );
+    
+    // Vecteur du point à projeter (cameraCartesian - origine)
+    const cameraVec = new window.CartesianCoord(
+        cameraCartesian.x - origin.x,
+        cameraCartesian.y - origin.y,
+        cameraCartesian.z - origin.z
+    );
+    
+    // Projeter sur la base 2D
+    // coord2D.x = <cameraVec, v1> / <v1, v1>
+    // coord2D.y = <cameraVec, v2> / <v2, v2>
+    
+    const dot_cam_v1 = cameraVec.x * b1.x + cameraVec.y * b1.y + cameraVec.z * b1.z;
+    const dot_v1_v1 = b1.x * b1.x + b1.y * b1.y + b1.z * b1.z;
+    
+    const dot_cam_v2 = cameraVec.x * b2.x + cameraVec.y * b2.y + cameraVec.z * b2.z;
+    const dot_v2_v2 = b2.x * b2.x + b2.y * b2.y + b2.z * b2.z;
+    
+    let Yc = dot_cam_v1 / dot_v1_v1;
+    let Xc = dot_cam_v2 / dot_v2_v2;
+    
+// Triangle 2D
+//        0        0.5        1
+//        |    |    |    |    |
+//       v1
+//  1     \                      __ 1
+//        | \
+//        |t6\
+// .75 v11|____\v9               __
+//        |\ t7| \
+//        |t5\ |t8\
+// 0.5  v3|___v10___\v4          __ 0.5
+//        |\ t4|\t9 | \
+//        |t3\ |t0\ |t10\
+// .25  v6|___v7___v13___\v14    __
+//        |\ t2|\t14|\t12| \
+//        |t1\ |  \ |  \ |t11\
+//  0     |___\|t15\|t13\|____\  __ 0
+//        v0   v8   v5  v12    v2
+//             | \  | \  | \   |\
+//        0  .25   0.5  .75  \ 1  \
+//                  \    \    \    \
+//          x+y   <0.25  <0.5 <0.75  <1
+    if (Xc < 0 || Yc < 0 || Xc + Yc > 1) {
+        console.log("Point is outside the triangle");
+    }
+    if (Yc > 0.5) {
+        if (Xc > 0.25) {
+            return 8; // t8
+        } else {
+    
+        }
+    }
+}
 function addSubtriangles(closestFace, i) {
     if (!closestFace || !window.fullerData || !window.fullerData.viewer) return;
     
