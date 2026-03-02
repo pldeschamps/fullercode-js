@@ -1,6 +1,7 @@
 class Subtriangles {
     constructor(faceGeoPos) {
         this.faceGeoPos = faceGeoPos;
+        this.v = [];
         this.a = this.faceGeoPos.vertices[0];
         this.b = this.faceGeoPos.vertices[1];
         this.c = this.faceGeoPos.vertices[2];
@@ -31,12 +32,13 @@ class Subtriangles {
 //           v5 /____v7____\ v3         
 //             /\ 14 /\ t4 /\            
 //            /13\  /t0\  /t5\           
-//       v12 /___v13___v11____\ v9     
+//       v12 /___v13___v10____\ v11     
 //          /\t12 /\ t9 /\ t7 /\         
 //         /  \  /  \  /t8\  /t6\        
 //        /_t11\/t10_\/____\/____\       
-//   [2] v2    v14   v4    v10   v1 [1] 
+//   [2] v2    v14   v4    v9    v1 [1] 
 //
+
         // First-level midpoints
         this.ab = Subtriangles.midpoint(this.a, this.b);
         this.bc = Subtriangles.midpoint(this.b, this.c);
@@ -58,18 +60,9 @@ class Subtriangles {
         this.c_ac = Subtriangles.midpoint(this.c, this.ac);
         this.ac_a = Subtriangles.midpoint(this.ac, this.a);
 
-        this.faceGeoPos.ab = this.ab;
-        this.faceGeoPos.bc = this.bc;
-        this.faceGeoPos.ac = this.ac;
-        this.faceGeoPos.ac_ab = this.ac_ab;
-        this.faceGeoPos.ab_bc = this.ab_bc;
-        this.faceGeoPos.bc_ac = this.bc_ac;
-        this.faceGeoPos.a_ab = this.a_ab;
-        this.faceGeoPos.ab_b = this.ab_b;
-        this.faceGeoPos.b_bc = this.b_bc;
-        this.faceGeoPos.bc_c = this.bc_c;
-        this.faceGeoPos.c_ac = this.c_ac;
-        this.faceGeoPos.ac_a = this.ac_a;
+        this.v.push(this.a, this.b, this.c, this.ab, this.bc, this.ac, this.a_ab, this.ac_ab, this.ac_a, this.b_bc, this.ab_bc, this.ab_b, this.c_ac, this.bc_ac, this.bc_c);
+
+        this.faceGeoPos.v = this.v;
 
 
 

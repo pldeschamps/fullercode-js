@@ -636,25 +636,38 @@ function findEnclosingTriangle() {
 //        /____\/____\/____\/____\       
 //   [2] c    bc_c   bc    b_bc   b [1] 
 //
+//                  v0 [0]               
+//                   /\                  
+//                  /t1\                 
+//              v8 /____\ v6        
+//                /\ t2 /\               
+//               /15\  /t3\              
+//           v5 /____v7____\ v3         
+//             /\ 14 /\ t4 /\            
+//            /13\  /t0\  /t5\           
+//       v12 /___v13___v10____\ v11     
+//          /\t12 /\ t9 /\ t7 /\         
+//         /  \  /  \  /t8\  /t6\        
+//        /_t11\/t10_\/____\/____\       
+//   [2] v2    v14   v4    v9    v1 [1] 
 
         // First-level midpoints
-        let p_ab = new window.CartesianCoord(closestFace.ab);
-        let p_bc = new window.CartesianCoord(closestFace.bc);
-        let p_ac = new window.CartesianCoord(closestFace.ac);
+        let p_ab = new window.CartesianCoord(closestFace.v[3]);
+        let p_bc = new window.CartesianCoord(closestFace.v[4]);
+        let p_ac = new window.CartesianCoord(closestFace.v[5]);
 
         // Second-level midpoints
-        let p_a_ab = new window.CartesianCoord(closestFace.a_ab);
-        let p_ab_b = new window.CartesianCoord(closestFace.ab_b);
-        let p_b_bc = new window.CartesianCoord(closestFace.b_bc);
-        let p_bc_c = new window.CartesianCoord(closestFace.bc_c);
-        let p_c_ac = new window.CartesianCoord(closestFace.c_ac);
-        let p_ac_a = new window.CartesianCoord(closestFace.ac_a);
-
+        let p_a_ab = new window.CartesianCoord(closestFace.v[6]);
+        let p_ab_b = new window.CartesianCoord(closestFace.v[11]);
+        let p_b_bc = new window.CartesianCoord(closestFace.v[9]);
+        let p_bc_c = new window.CartesianCoord(closestFace.v[14]);
+        let p_c_ac = new window.CartesianCoord(closestFace.v[12]);
+        let p_ac_a = new window.CartesianCoord(closestFace.v[8]);
 
         // Third-level midpoints
-        let p_ab_bc = new CartesianCoord(closestFace.ab_bc);
-        let p_bc_ac = new CartesianCoord(closestFace.bc_ac);
-        let p_ac_ab = new CartesianCoord(closestFace.ac_ab);
+        let p_ab_bc = new CartesianCoord(closestFace.v[10]);
+        let p_bc_ac = new CartesianCoord(closestFace.v[13]);
+        let p_ac_ab = new CartesianCoord(closestFace.v[7]);
 
         let cameraNormalized = new CartesianCoord(cameraCartesian);
         //in icosahedron.json the vertices of the faces are in the clockwise order
