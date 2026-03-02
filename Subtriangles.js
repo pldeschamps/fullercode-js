@@ -22,7 +22,21 @@ class Subtriangles {
 //        /____\/____\/____\/____\       
 //   [2] c    bc_c   bc    b_bc   b [1] 
 //
-
+//                  v0 [0]               
+//                   /\                  
+//                  /t1\                 
+//              v8 /____\ v6        
+//                /\ t2 /\               
+//               /15\  /t3\              
+//           v5 /____v7____\ v3         
+//             /\ 14 /\ t4 /\            
+//            /13\  /t0\  /t5\           
+//       v12 /___v13___v11____\ v9     
+//          /\t12 /\ t9 /\ t7 /\         
+//         /  \  /  \  /t8\  /t6\        
+//        /_t11\/t10_\/____\/____\       
+//   [2] v2    v14   v4    v10   v1 [1] 
+//
         // First-level midpoints
         this.ab = Subtriangles.midpoint(this.a, this.b);
         this.bc = Subtriangles.midpoint(this.b, this.c);
