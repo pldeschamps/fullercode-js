@@ -518,6 +518,7 @@ function findEnclosingTriangle() {
     //check, at each level, if the two closest subtriangles are already added
     for (let i = 0; i < levelIndex; i++) {
         addSubtriangles(closestFace, i);
+        let enclosingTriangleId = -1;
         if (i<7) {
         
         // find the face enclosing the point for the next level
@@ -575,7 +576,7 @@ function findEnclosingTriangle() {
 
         let cameraNormalized = new CartesianCoord(cameraCartesian);
         //in icosahedron.json the vertices of the faces are in the clockwise order
-        let enclosingTriangleId = -1;
+        
         let nextClosestFace = null;
 
 
@@ -685,7 +686,13 @@ function findEnclosingTriangle() {
             }
         }
 
-        
+        }
+        else {
+            // i>=7
+            // use cartesian 2D method to find closest face
+            enclosingTriangleId = get2DEnclosingTriangle(closestFace, cameraCartesian);
+            console.log("enclosingTriangleId: ", enclosingTriangleId);
+        }
         let nextClosestFaceId = closestFace.faceId + closestFace.ids[enclosingTriangleId];
         closestFace = window.triangles.find(t => t.faceId === nextClosestFaceId);
         if (!closestFace) {
@@ -696,12 +703,7 @@ function findEnclosingTriangle() {
         fullerCodeLabel.textContent =
         `fullercode: ${closestFace.faceId}`;
         positionCopyButton();
-        }
-        else {
-            // i>=7
-            // use cartesian 2D method to find closest face
-
-        }
+        
     }
 }
 
@@ -734,20 +736,62 @@ function get2DEnclosingTriangle(faceGeo, cameraCartesian) {
         cameraCartesian.y - origin.y,
         cameraCartesian.z - origin.z
     );
+    // -------------------------------------------------------------
+    // Projection operations requested by the user:
+    // 1. project `cameraVec` into the plane spanned by b1 and b2
+    // 2. project that plane projection onto the line defined by b1
+    //    along direction b2, and vice‑versa onto the line b2 along b1.
+    //
+    // In practice we compute the coefficients of cameraVec in the
+    // (non‑orthogonal) basis {b1, b2} using cross/dot formulas.  Those
+    // coefficients automatically ignore any component normal to the
+    // plane, so they represent the plane projection.  Setting one of the
+    // coefficients to zero yields the requested line projections.
+
+    // normal to the plane (not unit length)
+    const normal = cross_product(b1, b2);
+    const normSq = dot_product(normal, normal);
+    let u = 0, v = 0;
+    if (normSq !== 0) {
+        // u = ((cameraVec x b2) · normal) / |normal|^2
+        u = dot_product(cross_product(cameraVec, b2), normal) / normSq;
+        // v = ((b1 x cameraVec) · normal) / |normal|^2
+        v = dot_product(cross_product(b1, cameraVec), normal) / normSq;
+    }
+
+    // plane projection of cameraVec (for reference / debugging)
+    const projPlane = new window.CartesianCoord(
+        b1.x * u + b2.x * v,
+        b1.y * u + b2.y * v,
+        b1.z * u + b2.z * v
+    );
+    // projection onto line b1 along b2: set v = 0
+    const projOnB1AlongB2 = new window.CartesianCoord(
+        b1.x * u,
+        b1.y * u,
+        b1.z * u
+    );
+    // projection onto line b2 along b1: set u = 0
+    const projOnB2AlongB1 = new window.CartesianCoord(
+        b2.x * v,
+        b2.y * v,
+        b2.z * v
+    );
+
+    // optional: log the results for verification
+    //console.log('plane coeffs', u, v, 'projPlane', projPlane);
+    //console.log('projOnB1AlongB2', projOnB1AlongB2,
+    //            'projOnB2AlongB1', projOnB2AlongB1);
+    // -------------------------------------------------------------
     
-    // Projeter sur la base 2D
-    // coord2D.x = <cameraVec, v1> / <v1, v1>
-    // coord2D.y = <cameraVec, v2> / <v2, v2>
-    
-    const dot_cam_v1 = cameraVec.x * b1.x + cameraVec.y * b1.y + cameraVec.z * b1.z;
-    const dot_v1_v1 = b1.x * b1.x + b1.y * b1.y + b1.z * b1.z;
-    
-    const dot_cam_v2 = cameraVec.x * b2.x + cameraVec.y * b2.y + cameraVec.z * b2.z;
-    const dot_v2_v2 = b2.x * b2.x + b2.y * b2.y + b2.z * b2.z;
-    
-    let Yc = dot_cam_v1 / dot_v1_v1;
-    let Xc = dot_cam_v2 / dot_v2_v2;
-    
+    // Projeter sur la base 2D en utilisant les coefficients calculés
+    // précédemment.  Ici nous utilisons u et v qui correspondent aux
+    // projections de cameraVec sur b1 et b2 respectivement **dans le
+    // plan**.  En particulier la projection sur b1 le long de b2 vaut
+    // u*b1 ; on définit donc Yc = u.  De même Xc = v.
+    let Yc = u; // coeff le long de b1 (projOnB1AlongB2 = Yc * b1)
+    let Xc = v; // coeff le long de b2 (projOnB2AlongB1 = Xc * b2)
+    console.log("2D coords: ", Xc, Yc);
 // Triangle 2D
 //        0        0.5        1
 //        |    |    |    |    |
@@ -774,12 +818,30 @@ function get2DEnclosingTriangle(faceGeo, cameraCartesian) {
         console.log("Point is outside the triangle");
     }
     if (Yc > 0.5) {
-        if (Xc > 0.25) {
-            return 8; // t8
-        } else {
-    
-        }
+        if (Yc > 0.75) { return 6; }
+        else if (Xc > 0.25) {    return 8;}
+        else if (Xc+Yc < 0.75 ) {    return 5;}
+        else {return 7;}
     }
+    else if (Xc > 0.5) {
+        if(Xc > 0.75) {return 11;}
+        else if (Yc >0.25) {return 10;}
+        else if (Yc+Xc <0.75){return 13;}
+        else {return 12;}
+    }
+    else if(Xc+Yc < 0.5) {
+        if (Yc > 0.25) {return 3;}
+        else if (Xc > 0.25) {return 15;}
+        else if (Xc+Yc < 0.25) {return 1;}
+        else {return 2;}
+    }
+    else {
+        if (Yc < 0.25) {return 14;}
+        else if (Xc < 0.25) {return 4;}
+        else if (Xc+Yc > 0.75) {return 9;}
+        else {return 0;}
+    }
+    
 }
 function addSubtriangles(closestFace, i) {
     if (!closestFace || !window.fullerData || !window.fullerData.viewer) return;
