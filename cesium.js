@@ -519,7 +519,7 @@ function findEnclosingTriangle() {
     for (let i = 0; i < levelIndex; i++) {
         addSubtriangles(closestFace, i);
         let enclosingTriangleId = -1;
-        if (i<7) {
+        if (i<6) {
         
         // find the face enclosing the point for the next level
         // using spherical method based on cross and dot products
@@ -690,6 +690,7 @@ function findEnclosingTriangle() {
         else {
             // i>=7
             // use cartesian 2D method to find closest face
+            console.log("Using 2D method for level ", i);
             enclosingTriangleId = get2DEnclosingTriangle(closestFace, cameraCartesian);
             console.log("enclosingTriangleId: ", enclosingTriangleId);
         }
