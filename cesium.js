@@ -5,6 +5,8 @@
 //Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1MDk0NDgwMS03NmEzLTQ0MzQtOTc3Ny02MmNmNDg2ZGY3MTUiLCJpZCI6MzQ1MTMzLCJpYXQiOjE3NTg5OTA0MTN9.1aWmnRsHn8Z70pU5B7gJhQOLrarcr4SGf6GxTuPB0Xs';
 Cesium.Ion.defaultAccessToken = null;
 
+const transition3D2D = 6;
+
 // const naturalEarthProvider = await Cesium.TileMapServiceImageryProvider.fromUrl(
 //   Cesium.buildModuleUrl("Assets/Textures/NaturalEarthII")
 // );
@@ -452,7 +454,6 @@ function updateCameraLabel() {
 
 }
 
-
 function findEnclosingTriangle() {
     const viewer = window.fullerData.viewer;
     const facesGeoPositions = window.fullerData.facesGeoPositions;
@@ -519,8 +520,8 @@ function findEnclosingTriangle() {
     for (let i = 0; i < levelIndex; i++) {
         addSubtriangles(closestFace, i);
         let enclosingTriangleId = -1;
-        if (i<6) {
-        
+        if (i<transition3D2D) {
+        console.log("Using 3D method for level ", i);
         // find the face enclosing the point for the next level
         // using spherical method based on cross and dot products
 
@@ -723,7 +724,8 @@ function get2DEnclosingTriangle(faceGeo, cameraCartesian, levelIndex) {
     // then use barycentric coordinates to find which triangle contains the camera point
     // this method is more robust for very close faces and avoids numerical issues with cross/dot products
     console.log("levelIndex: ", levelIndex);
-    if (levelIndex <= 6) {
+    if (levelIndex <= transition3D2D) {
+        console.log("Calcul dans la base 2D");
         // Définir le repère 2D
         // Origine : faceGeo.vertices[0]
         const origin = faceGeo.vertices[0];
@@ -826,16 +828,17 @@ function get2DEnclosingTriangle(faceGeo, cameraCartesian, levelIndex) {
         if (Yc > 0.25) { ETiD = 3; Yc=Yc-0.25;}
         else if (Xc > 0.25) {ETiD = 15; Xc=Xc-0.25;}
         else if (Xc+Yc < 0.25) {ETiD = 1; }
-        else {ETiD = 2; Xc=0.25-Xc; Yc=0.25-Yc;}
+        else {ETiD = 2; Xc=0.5-Xc; Yc=0.5-Yc;}
     }
     else {
         if (Yc < 0.25) {ETiD = 14; Yc=0.25-Yc; Xc=0.5-Xc;}
         else if (Xc < 0.25) {ETiD = 4; Yc=0.5-Yc; Xc=0.25-Xc;}
         else if (Xc+Yc > 0.75) {ETiD = 9; Yc=0.5-Yc; Xc=0.5-Xc;}
-        else {ETiD = 0; Xc=0.25-Xc; Yc=0.25-Yc;}
+        else {ETiD = 0; Xc=Xc-0.25; Yc=Yc-0.25;}
     }
     get2DEnclosingTriangle.Xc=Xc*4;
     get2DEnclosingTriangle.Yc=Yc*4;
+    console.log("Nouveau 2D coords: ", get2DEnclosingTriangle.Xc, get2DEnclosingTriangle.Yc);
     return ETiD;
 }
 function addSubtriangles(closestFace, i) {
