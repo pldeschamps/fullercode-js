@@ -5,7 +5,7 @@
 //Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1MDk0NDgwMS03NmEzLTQ0MzQtOTc3Ny02MmNmNDg2ZGY3MTUiLCJpZCI6MzQ1MTMzLCJpYXQiOjE3NTg5OTA0MTN9.1aWmnRsHn8Z70pU5B7gJhQOLrarcr4SGf6GxTuPB0Xs';
 Cesium.Ion.defaultAccessToken = null;
 
-const transition3D2D = 6;
+const transition3D2D = 10;
 
 // const naturalEarthProvider = await Cesium.TileMapServiceImageryProvider.fromUrl(
 //   Cesium.buildModuleUrl("Assets/Textures/NaturalEarthII")
@@ -705,6 +705,14 @@ function findEnclosingTriangle() {
         fullerCodeLabel.textContent =
         `fullercode: ${closestFace.faceId}`;
         positionCopyButton();
+
+        const v0Carto = Cesium.Cartographic.fromCartesian(closestFace.vertices[0]);
+        const v1Carto = Cesium.Cartographic.fromCartesian(closestFace.vertices[1]);
+        const v2Carto = Cesium.Cartographic.fromCartesian(closestFace.vertices[2]);
+        console.log("v0 lat:", Cesium.Math.toDegrees(v0Carto.latitude), "lon:", Cesium.Math.toDegrees(v0Carto.longitude));
+        console.log("v1 lat:", Cesium.Math.toDegrees(v1Carto.latitude), "lon:", Cesium.Math.toDegrees(v1Carto.longitude));
+        console.log("v2 lat:", Cesium.Math.toDegrees(v2Carto.latitude), "lon:", Cesium.Math.toDegrees(v2Carto.longitude));
+        console.log("Camera Cartesian: ", Cesium.Math.toDegrees(cameraCartographic.latitude), Cesium.Math.toDegrees(cameraCartographic.longitude));
         
     }
 }

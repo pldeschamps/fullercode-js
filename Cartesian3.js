@@ -11,9 +11,10 @@ class CartesianCoord {
             this.z = cartesian.z / length;
         } else {
             // Otherwise treat as three separate coordinates
-            this.x = x;
-            this.y = y;
-            this.z = z;
+            const length = Math.sqrt(x * x + y * y + z * z);
+            this.x = x/ length;
+            this.y = y/ length;
+            this.z = z/ length;
         }
     }
     static cross_product(a, b) {
