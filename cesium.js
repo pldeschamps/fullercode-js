@@ -342,6 +342,7 @@ window.entities.add({
     position: Cesium.Cartesian3.fromDegrees(0, 90, 0),
     point: { pixelSize: 3, color: Cesium.Color.RED },
     heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+    
     label: { text: "your position", font: "24px sans-serif", pixelOffset: new Cesium.Cartesian2(0, -12),
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND 
      }
@@ -462,11 +463,18 @@ function findEnclosingTriangle() {
     // Get camera position in Cartesian3
     const cameraCartographic = viewer.camera.positionCartographic;
     
-    let cameraCartesian = Cesium.Cartesian3.fromRadians(
-        cameraCartographic.longitude,
-        cameraCartographic.latitude,
-        1
-    );
+    console.log("CameraCartographic: ", Cesium.Math.toDegrees(cameraCartographic.latitude), Cesium.Math.toDegrees(cameraCartographic.longitude));
+
+    // Pour la logique Fuller (sphérique), on projette la lat/lon géodétique 
+    // directement sur une sphère pour éviter le décalage de l'ellipsoïde WGS84.
+    let cameraCartesian = new UnitSphereCartesian(        cameraCartographic    );
+
+    console.log("CameraCartesian: ", Cesium.Math.toDegrees(Math.asin(cameraCartesian.z)), ",", Cesium.Math.toDegrees(Math.atan2(cameraCartesian.y, cameraCartesian.x)));
+
+    let cameraNormalized = new CartesianCoord(cameraCartesian);
+
+    console.log("cameraNormalized: ", Cesium.Math.toDegrees(Math.asin(cameraNormalized.z)), ",", Cesium.Math.toDegrees(Math.atan2(cameraNormalized.y, cameraNormalized.x)));
+
     //console.log("Camera Cartesian height: ", cameraCartesian);
     viewer.entities.getById("camera").position = cameraCartesian;
     // undefined: viewer.entities.getById("camera").position.height
@@ -558,24 +566,24 @@ function findEnclosingTriangle() {
 //   [2] v2    v14   v4    v9    v1 [1] 
 
         // First-level midpoints
-        let p_ab = new window.CartesianCoord(closestFace.v[3]);
-        let p_bc = new window.CartesianCoord(closestFace.v[4]);
-        let p_ac = new window.CartesianCoord(closestFace.v[5]);
+        let p_ab = new CartesianCoord(closestFace.v[3]);
+        let p_bc = new CartesianCoord(closestFace.v[4]);
+        let p_ac = new CartesianCoord(closestFace.v[5]);
 
         // Second-level midpoints
-        let p_a_ab = new window.CartesianCoord(closestFace.v[6]);
-        let p_ab_b = new window.CartesianCoord(closestFace.v[11]);
-        let p_b_bc = new window.CartesianCoord(closestFace.v[9]);
-        let p_bc_c = new window.CartesianCoord(closestFace.v[14]);
-        let p_c_ac = new window.CartesianCoord(closestFace.v[12]);
-        let p_ac_a = new window.CartesianCoord(closestFace.v[8]);
+        let p_a_ab = new CartesianCoord(closestFace.v[6]);
+        let p_ab_b = new CartesianCoord(closestFace.v[11]);
+        let p_b_bc = new CartesianCoord(closestFace.v[9]);
+        let p_bc_c = new CartesianCoord(closestFace.v[14]);
+        let p_c_ac = new CartesianCoord(closestFace.v[12]);
+        let p_ac_a = new CartesianCoord(closestFace.v[8]);
 
         // Third-level midpoints
         let p_ab_bc = new CartesianCoord(closestFace.v[10]);
         let p_bc_ac = new CartesianCoord(closestFace.v[13]);
         let p_ac_ab = new CartesianCoord(closestFace.v[7]);
 
-        let cameraNormalized = new CartesianCoord(cameraCartesian);
+        
         //in icosahedron.json the vertices of the faces are in the clockwise order
         
         let nextClosestFace = null;
@@ -709,13 +717,13 @@ function findEnclosingTriangle() {
         const v0Carto = Cesium.Cartographic.fromCartesian(closestFace.vertices[0]);
         const v1Carto = Cesium.Cartographic.fromCartesian(closestFace.vertices[1]);
         const v2Carto = Cesium.Cartographic.fromCartesian(closestFace.vertices[2]);
-        console.log("v0 lat:", Cesium.Math.toDegrees(v0Carto.latitude), "lon:", Cesium.Math.toDegrees(v0Carto.longitude));
-        console.log("v1 lat:", Cesium.Math.toDegrees(v1Carto.latitude), "lon:", Cesium.Math.toDegrees(v1Carto.longitude));
-        console.log("v2 lat:", Cesium.Math.toDegrees(v2Carto.latitude), "lon:", Cesium.Math.toDegrees(v2Carto.longitude));
-        console.log("Camera Cartesian: ", Cesium.Math.toDegrees(cameraCartographic.latitude), Cesium.Math.toDegrees(cameraCartographic.longitude));
+        console.log("v0", Cesium.Math.toDegrees(v0Carto.latitude), ",", Cesium.Math.toDegrees(v0Carto.longitude));
+        console.log("v1", Cesium.Math.toDegrees(v1Carto.latitude), ",", Cesium.Math.toDegrees(v1Carto.longitude));
+        console.log("v2", Cesium.Math.toDegrees(v2Carto.latitude), ",", Cesium.Math.toDegrees(v2Carto.longitude));
+        
         
     }
-}
+}                                                               
 
 function get2DEnclosingTriangle(faceGeo, cameraCartesian, levelIndex) {
     // Use function-scoped static variables so values persist between calls.
@@ -888,4 +896,3 @@ function getLevelIndex(height) {
     // Si plus petit que tous les niveaux
     return levels.length;
 }
-
