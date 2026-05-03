@@ -3,6 +3,7 @@ class Subtriangles {
         this.faceGeoPos = faceGeoPos;
         this.v = [];
         this.a = this.faceGeoPos.vertices[0];
+        //console.log("a: ",Math.sqrt(this.a.x*this.a.x + this.a.y*this.a.y + this.a.z*this.a.z));
         this.b = this.faceGeoPos.vertices[1];
         this.c = this.faceGeoPos.vertices[2];
 
@@ -127,23 +128,25 @@ class Subtriangles {
     }
 
     // Static method to compute the midpoint between two Cesium.Cartesian3 points, normalized to the sphere
-    static midpoint(p1, p2, radius = 6371010) {
+    static midpoint(p1, p2, radius = window.radius || 1.0) {
         const x = p1.x + p2.x;
         const y = p1.y + p2.y;
         const z = p1.z + p2.z;
         const length = Math.sqrt(x * x + y * y + z * z);
+        //console.log("radius: ",radius);
         return new Cesium.Cartesian3(
-            (x / length) * radius,
-            (y / length) * radius,
-            (z / length) * radius
+            x * radius/ length,
+            y * radius/ length,
+            z * radius/ length
         );
     }
     //statimethod to compute the gravity center of three Cesium.Cartesian3 points
-    static gravityCenter(p1, p2, p3, radius = 6371010) {
+    static gravityCenter(p1, p2, p3, radius = window.radius || 1.0) {
         const x = p1.x + p2.x + p3.x;
         const y = p1.y + p2.y + p3.y;
         const z = p1.z + p2.z + p3.z;
         const length = Math.sqrt(x * x + y * y + z * z);
+
         return new Cesium.Cartesian3(
             (x / length) * radius,
             (y / length) * radius,

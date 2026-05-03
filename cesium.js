@@ -5,7 +5,7 @@
 //Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1MDk0NDgwMS03NmEzLTQ0MzQtOTc3Ny02MmNmNDg2ZGY3MTUiLCJpZCI6MzQ1MTMzLCJpYXQiOjE3NTg5OTA0MTN9.1aWmnRsHn8Z70pU5B7gJhQOLrarcr4SGf6GxTuPB0Xs';
 Cesium.Ion.defaultAccessToken = null;
 
-const transition3D2D = 10;
+const transition3D2D = 11;
 
 // const naturalEarthProvider = await Cesium.TileMapServiceImageryProvider.fromUrl(
 //   Cesium.buildModuleUrl("Assets/Textures/NaturalEarthII")
@@ -13,7 +13,10 @@ const transition3D2D = 10;
 const osm = new Cesium.OpenStreetMapImageryProvider({
     url : 'https://tile.openstreetmap.org/'
 });
+window.radius = 6371010.0;
+const sphereEllipsoid = new Cesium.Ellipsoid(6371010, 6371010, 6371010);
 window.viewer = new Cesium.Viewer('cesiumContainer', {
+    ellipsoid: sphereEllipsoid,
     // baseLayer: Cesium.ImageryLayer.fromProviderAsync(
     //     Cesium.TileMapServiceImageryProvider.fromUrl(
     //         Cesium.buildModuleUrl("Assets/Textures/NaturalEarthII"),
@@ -28,6 +31,10 @@ window.viewer = new Cesium.Viewer('cesiumContainer', {
     sun: false,
     moon: false,
 });
+
+// Désactive le test de profondeur contre le globe pour éviter que les polygones ne soient "avalés" par la surface
+//window.viewer.scene.globe.depthTestAgainstTerrain = false;
+
 window.viewer.imageryLayers.addImageryProvider(osm);
 //window.viewer.imageryLayers.raiseToTop(osm);
 const cameraLabel = document.createElement("div");
@@ -75,7 +82,7 @@ async function copyFullercodeLink() {
     // Extract only the last word (the actual code) from the label text.
     // Example: "fullercode: XF" -> "XF"
     const labelText = (fullerCodeLabel.textContent || '').trim();
-    console.log('labelText:', labelText);
+    //console.log('labelText:', labelText);
     const match = labelText.match(/([A-Z0-9]+)$/i);
     let code = match ? match[1].toUpperCase() : '';
     // If label didn't contain a code yet, fall back to the input value
@@ -147,7 +154,7 @@ fullerCodeInput.addEventListener('input', function (e) {
         const prevIdx = Math.max(filtered.length - 2, 0);
         cameraHeight = (window.LevelHeights[idx] + window.LevelHeights[prevIdx]) / 2;
     }  else {
-        cameraHeight = 7000000; // default
+        cameraHeight = 7000000;
     }
 });
 
@@ -180,7 +187,7 @@ function flyToCode(code) {
             createLevels(code.length);
             for (let i = 1; i <= code.length; i++) {
                 const partialCode = code.substring(0, i);
-                console.log("Creating subtriangle for:", partialCode);
+                //console.log("Creating subtriangle for:", partialCode);
                 const subTriangle = window.triangles.find(t => t.faceId === partialCode);
                 if (subTriangle) {
                     addSubtriangles(subTriangle, i-1);
@@ -198,11 +205,12 @@ function flyToCode(code) {
     if (targetTriangle) {
         try {
             // Convert center position to get latitude and longitude
-            const cartographic = Cesium.Cartographic.fromCartesian(targetTriangle.center);
+            const cartographic = sphereEllipsoid.cartesianToCartographic(targetTriangle.center);
             const destinationPosition = Cesium.Cartesian3.fromRadians(
                 cartographic.longitude,
                 cartographic.latitude,
-                cameraHeight // Use height computed by input handler
+                cameraHeight, // Use height computed by input handler
+                sphereEllipsoid
             );
             // Move camera to the target triangle's center with specified height
             window.viewer.camera.flyTo({
@@ -326,25 +334,31 @@ const layer = window.viewer.imageryLayers.get(0);
   layer.show = true;
   layer.alpha = 1.0;
   layer.brightness = 1.2;
+// const layer = window.viewer.imageryLayers.get(0);
+//   layer.show = true;
+//   layer.alpha = 1.0;
+//   layer.brightness = 1.2;
 
   // 👇 désactive la coupure d’affichage aux grandes distances
   layer.minificationFilter = Cesium.TextureMinificationFilter.LINEAR;
   layer.magnificationFilter = Cesium.TextureMagnificationFilter.LINEAR;
+//   // 👇 désactive la coupure d’affichage aux grandes distances
+//   layer.minificationFilter = Cesium.TextureMinificationFilter.LINEAR;
+//   layer.magnificationFilter = Cesium.TextureMagnificationFilter.LINEAR;
 
 
 window.viewer.scene.screenSpaceCameraController.enableTilt = false
 window.entities = window.viewer.entities;
-window.LevelHeights = [6500000, 2600000, 1000000, 200000, 100000,10000,1800,700,170,50,10];
+// Ajustement des hauteurs de caméra pour une sphère de rayon 1.0
+window.LevelHeights = [6500000, 2600000, 1000000, 200000, 100000, 10000, 1800, 700, 170, 50, 10];
 window.triangles = []; // To store subdivided triangles
 
 window.entities.add({
     id:"camera",
-    position: Cesium.Cartesian3.fromDegrees(0, 90, 0),
-    point: { pixelSize: 3, color: Cesium.Color.RED },
-    heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-    
+    position: Cesium.Cartesian3.fromDegrees(0, 90, 0, sphereEllipsoid),
+    point: { pixelSize: 5, color: Cesium.Color.RED, outlineColor: Cesium.Color.WHITE, outlineWidth: 1 },
+
     label: { text: "your position", font: "24px sans-serif", pixelOffset: new Cesium.Cartesian2(0, -12),
-        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND 
      }
     });
 
@@ -404,20 +418,24 @@ function addPolygons(facesGeoPositions,parentEntity) {
     });
 }
 function addPolygon(positions, triangleId, parentEntity,center) {
-    
+    // On n'utilise la précision absolue qu'à partir du niveau 6 (ID length >= 7)
+    const isDetailedLevel = triangleId.length >= 4;
+
     viewer.entities.add({
         id: "triangle "+triangleId,
         parent: parentEntity,
             polygon: {
                 hierarchy: positions,
-                height: 1,
+                perPositionHeight: isDetailedLevel,
+                height: isDetailedLevel ? undefined : 0,
+                heightReference: isDetailedLevel ? Cesium.HeightReference.NONE : Cesium.HeightReference.CLAMP_TO_GROUND,
                 material: Cesium.Color.BLUE.withAlpha(0.05),
                 outline: true,
                 outlineWidth: 5,
                 outlineColor: Cesium.Color.MAGENTA,
-                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
             }
     });
+
     const labelFont = (32 - triangleId.length).toString()+"px Consolas";
     viewer.entities.add({
         id: "label " + triangleId,
@@ -427,7 +445,8 @@ function addPolygon(positions, triangleId, parentEntity,center) {
         label: {
             text: `${triangleId}`, font: labelFont,
             fillColor: Cesium.Color.MAGENTA.withAlpha(0.9),
-            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
+            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // Aligne sur le sol visuel (OSM)
+            //disableDepthTestDistance: Number.POSITIVE_INFINITY // Garde le texte visible
         }
     });
     }
@@ -441,7 +460,8 @@ function updateCameraLabel() {
     const cameraCartesian = Cesium.Cartesian3.fromRadians(
         cameraCartographic.longitude,
         cameraCartographic.latitude,
-        0
+        0,
+        sphereEllipsoid
     );
     //cameraCartographic.heightReference = Cesium.HeightReference.CLAMP_TO_GROUND;
     // TODO: pourquoi sans effet ? la position du label ne suit pas le terrain, même en mettant heightReference à CLAMP_TO_GROUND
@@ -463,29 +483,32 @@ function findEnclosingTriangle() {
     // Get camera position in Cartesian3
     const cameraCartographic = viewer.camera.positionCartographic;
     
-    console.log("CameraCartographic: ", Cesium.Math.toDegrees(cameraCartographic.latitude), Cesium.Math.toDegrees(cameraCartographic.longitude));
+    //console.log("CameraCartographic: ", Cesium.Math.toDegrees(cameraCartographic.latitude), Cesium.Math.toDegrees(cameraCartographic.longitude));
 
     // Pour la logique Fuller (sphérique), on projette la lat/lon géodétique 
     // directement sur une sphère pour éviter le décalage de l'ellipsoïde WGS84.
     let cameraCartesian = new UnitSphereCartesian(        cameraCartographic    );
 
-    console.log("CameraCartesian: ", Cesium.Math.toDegrees(Math.asin(cameraCartesian.z)), ",", Cesium.Math.toDegrees(Math.atan2(cameraCartesian.y, cameraCartesian.x)));
+    //console.log("CameraCartesian: ", Cesium.Math.toDegrees(Math.asin(cameraCartesian.z)), ",", Cesium.Math.toDegrees(Math.atan2(cameraCartesian.y, cameraCartesian.x)));
 
     let cameraNormalized = new CartesianCoord(cameraCartesian);
 
-    console.log("cameraNormalized: ", Cesium.Math.toDegrees(Math.asin(cameraNormalized.z)), ",", Cesium.Math.toDegrees(Math.atan2(cameraNormalized.y, cameraNormalized.x)));
+    //console.log("cameraNormalized: ", Cesium.Math.toDegrees(Math.asin(cameraNormalized.z)), ",", Cesium.Math.toDegrees(Math.atan2(cameraNormalized.y, cameraNormalized.x)));
 
-    //console.log("Camera Cartesian height: ", cameraCartesian);
-    viewer.entities.getById("camera").position = cameraCartesian;
-    // undefined: viewer.entities.getById("camera").position.height
-    // undefined: viewer.entities.getById("camera").position.heightReference);
+    // Projection du point camera sur la surface de notre sphère (rayon window.radius)
+    const cameraPosSurface = Cesium.Cartesian3.multiplyByScalar(
+        new Cesium.Cartesian3(cameraCartesian.x, cameraCartesian.y, cameraCartesian.z),
+        window.radius,
+        new Cesium.Cartesian3()
+    );
 
-    viewer.entities.getById("camera").heightReference = Cesium.HeightReference.CLAMP_TO_GROUND;
-    //TODO: pourquoi sans effet ?
-    viewer.entities.getById("camera").height = 0;
-    //TODO: pourquoi sans effet ?
-
-    //console.log("camera height reference: ", viewer.entities.getById("camera").heightReference);
+    const cameraEntity = viewer.entities.getById("camera");
+    if (cameraEntity) {
+        cameraEntity.position = cameraPosSurface;
+        // Note: heightReference et height se règlent sur les propriétés graphiques (point/label), pas sur l'entité.
+        cameraEntity.point.heightReference = Cesium.HeightReference.NONE;
+        cameraEntity.label.heightReference = Cesium.HeightReference.NONE;
+    }
     //console.log("Cesium.HeightReference.CLAMP_TO_GROUND: ", Cesium.HeightReference.CLAMP_TO_GROUND);
 
 /*     let x = cameraCartesian.x;
@@ -522,7 +545,6 @@ function findEnclosingTriangle() {
                 minDist = dist;
                 closestFace = faceObj;
             }
- //       }
     });
     //check, at each level, if the two closest subtriangles are already added
     for (let i = 0; i < levelIndex; i++) {
@@ -700,7 +722,7 @@ function findEnclosingTriangle() {
             // i>=6
             // use cartesian 2D method to find closest face
             console.log("Using 2D method for level ", i);
-            enclosingTriangleId = get2DEnclosingTriangle(closestFace, cameraCartesian, i);
+            enclosingTriangleId = get2DEnclosingTriangle(closestFace, cameraPosSurface, i);
             console.log("enclosingTriangleId: ", enclosingTriangleId);
         }
         let nextClosestFaceId = closestFace.faceId + closestFace.ids[enclosingTriangleId];
@@ -714,12 +736,12 @@ function findEnclosingTriangle() {
         `fullercode: ${closestFace.faceId}`;
         positionCopyButton();
 
-        const v0Carto = Cesium.Cartographic.fromCartesian(closestFace.vertices[0]);
-        const v1Carto = Cesium.Cartographic.fromCartesian(closestFace.vertices[1]);
-        const v2Carto = Cesium.Cartographic.fromCartesian(closestFace.vertices[2]);
-        console.log("v0", Cesium.Math.toDegrees(v0Carto.latitude), ",", Cesium.Math.toDegrees(v0Carto.longitude));
-        console.log("v1", Cesium.Math.toDegrees(v1Carto.latitude), ",", Cesium.Math.toDegrees(v1Carto.longitude));
-        console.log("v2", Cesium.Math.toDegrees(v2Carto.latitude), ",", Cesium.Math.toDegrees(v2Carto.longitude));
+        const v0Carto = sphereEllipsoid.cartesianToCartographic(closestFace.vertices[0]);
+        const v1Carto = sphereEllipsoid.cartesianToCartographic(closestFace.vertices[1]);
+        const v2Carto = sphereEllipsoid.cartesianToCartographic(closestFace.vertices[2]);
+        //console.log("v0", Cesium.Math.toDegrees(v0Carto.latitude), ",", Cesium.Math.toDegrees(v0Carto.longitude));
+        //console.log("v1", Cesium.Math.toDegrees(v1Carto.latitude), ",", Cesium.Math.toDegrees(v1Carto.longitude));
+        //console.log("v2", Cesium.Math.toDegrees(v2Carto.latitude), ",", Cesium.Math.toDegrees(v2Carto.longitude));
         
         
     }
@@ -741,7 +763,7 @@ function get2DEnclosingTriangle(faceGeo, cameraCartesian, levelIndex) {
     // this method is more robust for very close faces and avoids numerical issues with cross/dot products
     console.log("levelIndex: ", levelIndex);
     if (levelIndex <= transition3D2D) {
-        console.log("Calcul dans la base 2D");
+        //console.log("Calcul dans la base 2D");
         // Définir le repère 2D
         // Origine : faceGeo.vertices[0]
         const origin = faceGeo.vertices[0];
@@ -798,7 +820,7 @@ function get2DEnclosingTriangle(faceGeo, cameraCartesian, levelIndex) {
         Yc = u; // coeff le long de b1 (projOnB1AlongB2 = Yc * b1)
         Xc = v; // coeff le long de b2 (projOnB2AlongB1 = Xc * b2)
     }
-    console.log("2D coords: ", Xc, Yc);
+    //console.log("2D coords: ", Xc, Yc);
     // update static values so the next invocation can start from last result
 
 // Triangle 2D
@@ -826,7 +848,7 @@ function get2DEnclosingTriangle(faceGeo, cameraCartesian, levelIndex) {
 
     let ETiD = 0; // Enclosing Triangle Id
     if (Xc < 0 || Yc < 0 || Xc + Yc > 1) {
-        console.log("Point is outside the triangle");
+        //console.log("Point is outside the triangle");
     }
     if (Yc > 0.5) {
         if (Yc > 0.75) { ETiD = 6; Yc=Yc-0.75;}
@@ -854,7 +876,7 @@ function get2DEnclosingTriangle(faceGeo, cameraCartesian, levelIndex) {
     }
     get2DEnclosingTriangle.Xc=Xc*4;
     get2DEnclosingTriangle.Yc=Yc*4;
-    console.log("Nouveau 2D coords: ", get2DEnclosingTriangle.Xc, get2DEnclosingTriangle.Yc);
+    //console.log("Nouveau 2D coords: ", get2DEnclosingTriangle.Xc, get2DEnclosingTriangle.Yc);
     return ETiD;
 }
 function addSubtriangles(closestFace, i) {
@@ -865,7 +887,7 @@ function addSubtriangles(closestFace, i) {
     //console.log("alreadyAdded: ", alreadyAdded);
     if (!alreadyAdded) {
         addedSub.push(closestFace.faceId);
-        console.log("calling Subtriangles for: ", closestFace.faceId);
+        //console.log("calling Subtriangles for: ", closestFace.faceId);
         let st = new Subtriangles(closestFace);
         //console.log("st A: ", st.subFaces[1].vertices);
         addPolygons(st.subFaces, entitiesLevels[i + 1]);

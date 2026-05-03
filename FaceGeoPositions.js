@@ -17,9 +17,10 @@ class FaceGeoPositions {
         let y = (this.vertices[0].y + this.vertices[1].y + this.vertices[2].y) ;
         let z = (this.vertices[0].z + this.vertices[1].z + this.vertices[2].z) ;
         const length = Math.sqrt(x * x + y * y + z * z);
-        x = x / length * 6371010;
-        y = y / length * 6371010;
-        z = z / length * 6371010;
+        const r = window.radius || 1.0;
+        x = x / length * r;
+        y = y / length * r;
+        z = z / length * r;
         //console.log("x after normalization:", x);
         return new Cesium.Cartesian3(x, y, z);
     }

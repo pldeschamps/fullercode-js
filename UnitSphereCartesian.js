@@ -1,6 +1,6 @@
 class UnitSphereCartesian {
     constructor(cesiumCartesian){
-        console.log("UnitSphereCartesian: cesiumCartesian", cesiumCartesian);
+        //console.log("UnitSphereCartesian: cesiumCartesian", cesiumCartesian);
         const latRad = cesiumCartesian.latitude;
         //console.log("UnitSphereCartesian: latDeg", Cesium.Math.toDegrees(latRad));
         const lonRad = cesiumCartesian.longitude;

@@ -4,7 +4,7 @@ class CartesianCoord {
     constructor(x, y, z) {
         // If x is an object (cartesian), normalize it
         if (typeof x === 'object' && x !== null && !isNaN(x.x)) {
-            console.log("CartesianCoord: object");
+            //console.log("CartesianCoord: object");
             const cartesian = x;
             const length = Math.sqrt(cartesian.x * cartesian.x + cartesian.y * cartesian.y + cartesian.z * cartesian.z);
             this.y = cartesian.y / length;
@@ -13,7 +13,7 @@ class CartesianCoord {
             
         } else {
             // Otherwise treat as three separate coordinates
-            console.log("CartesianCoord: x,y,z");
+            //console.log("CartesianCoord: x,y,z");
             const length = Math.sqrt(x * x + y * y + z * z);
             this.x = x/ length;
             this.y = y/ length;
