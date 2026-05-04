@@ -103,6 +103,8 @@ South Pacific
             Every face has three summits identified by 0 (the closest summit to Vestbrakan or the South Pacific), 1 and 2 clockwise.
             Each face is further divided into 16 smaller triangles, and so on.
 
+            Fullercode assigns an index to each of the 16 smaller triangles in the same way but assigns a chararcter depending on the pattern of the subtriangles.
+            
             The smaller triangle in the middle has index 0 and always refered as "C".
             The other triangles are numbered from 1 to 15 as follows:
             <br>
@@ -125,23 +127,27 @@ South Pacific
 
  Example: Faces 'M' and '5' have
 the same pattern of subtriangles:
+indexes: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+pattern: C A 2 H 5 P X 9 V 8 T  R  7  M  3  F
+
                 (0)
                 /\
                /A \
               /____\
              /\ 2  /\
-            / X\  /F \
+            / F\  /H \
            /____\/____\
-          /\ 9  /\  3 /\
-         /V \  /C \  / H\
+          /\ 3  /\  5 /\
+         /M \  /C \  / P\
         /____\/____\/____\
-       /\ 8  /\  7 /\    /\
-      / T\  /R \  / P\ 5/M \
+       /\ 7  /\  8 /\    /\
+      / R\  /T \  / V\ 9/X \
      /____\/____\/____\/____\
    (2)                      (1)
 </pre>
 <br>
 There are 20 triangles and 10 different patterns of subtriangles to avoid that adjacent triangles have the same character on their common edge or summit.
+patterns can be found in the json file <a href="icosahedron.json">icosahedron.json</a>.
 <br>
 <br>
 
