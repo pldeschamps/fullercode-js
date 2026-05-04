@@ -57,25 +57,70 @@ fullerCodeCopyBtn.setAttribute('aria-label', 'Copy fullercode link');
 
 window.viewer.container.appendChild(fullerCodeCopyBtn);
 
-function positionCopyButton() {
-    // Position the copy button to the right of the fullerCodeLabel
+// Share button
+const fullerCodeShareBtn = document.createElement('button');
+fullerCodeShareBtn.id = 'fullerCodeShare';
+fullerCodeShareBtn.type = 'button';
+fullerCodeShareBtn.textContent = 'Share';
+fullerCodeShareBtn.className = 'fullerCodeShare';
+fullerCodeShareBtn.setAttribute('aria-label', 'Share location');
+window.viewer.container.appendChild(fullerCodeShareBtn);
+
+function positionHeaderButtons() {
     try {
         const rect = fullerCodeLabel.getBoundingClientRect();
-        // viewer.container is positioned; compute left relative to container
         const containerRect = window.viewer.container.getBoundingClientRect();
-        const left = rect.right - containerRect.left + 8; // 8px gap
-        fullerCodeCopyBtn.style.left = left + 'px';
-        // align vertically with label
+        
+        // Position Copy button
+        const copyLeft = rect.right - containerRect.left + 8;
+        fullerCodeCopyBtn.style.left = copyLeft + 'px';
         fullerCodeCopyBtn.style.top = (rect.top - containerRect.top) + 'px';
+
+        // Position Share button next to Copy
+        const copyRect = fullerCodeCopyBtn.getBoundingClientRect();
+        if (copyRect.width > 0) {
+            fullerCodeShareBtn.style.left = (copyLeft + copyRect.width + 8) + 'px';
+        } else {
+            fullerCodeShareBtn.style.left = (copyLeft + 70) + 'px';
+        }
+        fullerCodeShareBtn.style.top = (rect.top - containerRect.top) + 'px';
     } catch (e) {
         // fallback
         fullerCodeCopyBtn.style.left = '220px';
+        fullerCodeShareBtn.style.left = '300px';
     }
 }
 
+// Share logic
+async function shareLocation() {
+    const carto = window.viewer.camera.positionCartographic;
+    const lat = Cesium.Math.toDegrees(carto.latitude).toFixed(6);
+    const lon = Cesium.Math.toDegrees(carto.longitude).toFixed(6);
+    const code = (fullerCodeLabel.textContent || '').replace('fullercode: ', '').trim();
+    
+    const shareData = {
+        title: 'Fullercode Location',
+        text: `Fullercode: ${code}\nCoordonnées: ${lat}, ${lon}`,
+        url: `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`
+    };
+
+    if (navigator.share) {
+        try {
+            await navigator.share(shareData);
+        } catch (err) {
+            console.log('Partage annulé ou échoué', err);
+        }
+    } else {
+        // Fallback pour desktop ou navigateurs anciens
+        window.open(shareData.url, '_blank');
+    }
+}
+
+fullerCodeShareBtn.addEventListener('click', shareLocation);
+
 // initial position and on resize
-positionCopyButton();
-window.addEventListener('resize', positionCopyButton);
+positionHeaderButtons();
+window.addEventListener('resize', positionHeaderButtons);
 
 // Copy handler: build URL and copy to clipboard
 async function copyFullercodeLink() {
@@ -734,7 +779,7 @@ function findEnclosingTriangle() {
         //console.log("closest: ", closestFace.center);
         fullerCodeLabel.textContent =
         `fullercode: ${closestFace.faceId}`;
-        positionCopyButton();
+        positionHeaderButtons();
 
         const v0Carto = sphereEllipsoid.cartesianToCartographic(closestFace.vertices[0]);
         const v1Carto = sphereEllipsoid.cartesianToCartographic(closestFace.vertices[1]);

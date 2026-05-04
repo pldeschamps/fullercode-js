@@ -91,6 +91,20 @@ html,body{width: 100%;
   cursor: pointer;
 }
 
+/* Share button style */
+.fullerCodeShare {
+  position: absolute;
+  z-index: 100000;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(153, 102, 184, 0.9);
+  background: rgba(10, 2, 122, 0.8);
+  color: #9966b8;
+  font-family: monospace;
+  font-size: 1.4em;
+  cursor: pointer;
+}
+
 .fullerCodeCopy:active,
 .fullerCodeCopy:focus {
   outline: none;
@@ -116,7 +130,7 @@ padding:1rem;
 .site-header{
 background:#223355;
 border-bottom:1px solid rgba(0,0,0,0.06);
-position:fixed;
+position:sticky;
 top:0;
 left:0;
 right:0;
@@ -156,7 +170,7 @@ letter-spacing:0.02em;
 
 
 .hero{
-padding:6rem 0 2rem 0; /* add top padding to avoid overlap with fixed header */
+padding: 1rem 0;
 }
 .hero h2{
 margin-top:0;
@@ -189,6 +203,7 @@ color:rgba(0,0,0,0.6);
 flex-wrap:wrap;
 justify-content:center;
 }
+  .container { padding: 0.5rem; }
 }
 
 /* On small screens make the Cesium container part of the document flow so the page can scroll
@@ -199,9 +214,27 @@ justify-content:center;
     position: relative;
     width: 100%;
     /* use the full viewport height minus the fixed header so the Cesium view fills the screen */
-    height: calc(100vh - 64px);
-    margin-top: 64px; /* push below the fixed header */
+    height: 70vh;
+    margin-top: 0;
     overflow: hidden;
+  }
+
+  /* New rule for hero section on small screens */
+  .hero {
+    padding: 0.2rem 0; 
+  }
+  .hero p {
+    margin: 0; /* Supprime les marges du paragraphe qui créent du vide */
+    font-size: 1.2em;
+  }
+
+  /* Rendre les éléments de navigation plus compacts sur les petits écrans */
+  .main-nav a {
+    padding: 0.4rem 0.6rem;
+    font-size: 1em; /* On rétablit une taille lisible */
+  }
+  .main-nav ul {
+    gap: 0.5rem; /* Espacement réduit entre les éléments */
   }
 }
 
