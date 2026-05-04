@@ -96,22 +96,32 @@ async function shareLocation() {
     const carto = window.viewer.camera.positionCartographic;
     const lat = Cesium.Math.toDegrees(carto.latitude).toFixed(6);
     const lon = Cesium.Math.toDegrees(carto.longitude).toFixed(6);
-    const code = (fullerCodeLabel.textContent || '').replace('fullercode: ', '').trim();
+
+    // Extraction propre du code (ex: "MTV")
+    const labelText = (fullerCodeLabel.textContent || '').trim();
+    const match = labelText.match(/([A-Z0-9]+)$/i);
+    const code = match ? match[1].toUpperCase() : '';
     
     const shareData = {
-        title: 'Fullercode Location',
-        text: `Fullercode: ${code}\nCoordonnées: ${lat}, ${lon}`,
-        url: `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`
+        title: `Fullercode ${code}`,
+        // On garde un texte simple. Waze a tendance à ignorer l'URL s'il trouve un texte complexe.
+        // Mettre les coordonnées en premier dans le texte aide certains parseurs d'apps.
+        text: `${lat},${lon} (Fullercode: ${code})`,
+        // Le format ?q=lat,lon est le plus universel pour déclencher les apps de navigation.
+        url: `https://maps.google.com/maps?q=${lat},${lon}`
     };
 
-    if (navigator.share) {
+    // Vérification de la capacité de partage et du contexte sécurisé
+    if (navigator.share && window.isSecureContext) {
         try {
             await navigator.share(shareData);
         } catch (err) {
-            console.log('Partage annulé ou échoué', err);
+            if (err.name !== 'AbortError') {
+                console.error('Erreur de partage:', err);
+            }
         }
     } else {
-        // Fallback pour desktop ou navigateurs anciens
+        // Fallback : ouverture directe dans Google Maps (qui redirigera vers l'app si installée)
         window.open(shareData.url, '_blank');
     }
 }
