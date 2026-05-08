@@ -475,6 +475,8 @@ function addPolygons(facesGeoPositions,parentEntity) {
 function addPolygon(positions, triangleId, parentEntity,center) {
     // On n'utilise la précision absolue qu'à partir du niveau 6 (ID length >= 7)
     const isDetailedLevel = triangleId.length >= 4;
+    // Détection mobile cohérente avec les media queries CSS (700px)
+    const isMobile = window.innerWidth <= 700;
 
     viewer.entities.add({
         id: "triangle "+triangleId,
@@ -486,7 +488,7 @@ function addPolygon(positions, triangleId, parentEntity,center) {
                 heightReference: isDetailedLevel ? Cesium.HeightReference.NONE : Cesium.HeightReference.CLAMP_TO_GROUND,
                 material: Cesium.Color.BLUE.withAlpha(0.05),
                 outline: true,
-                outlineWidth: 5,
+                outlineWidth: isMobile ? 2 : 5,
                 outlineColor: Cesium.Color.MAGENTA,
             }
     });
@@ -794,9 +796,9 @@ function findEnclosingTriangle() {
         const v0Carto = sphereEllipsoid.cartesianToCartographic(closestFace.vertices[0]);
         const v1Carto = sphereEllipsoid.cartesianToCartographic(closestFace.vertices[1]);
         const v2Carto = sphereEllipsoid.cartesianToCartographic(closestFace.vertices[2]);
-        //console.log("v0", Cesium.Math.toDegrees(v0Carto.latitude), ",", Cesium.Math.toDegrees(v0Carto.longitude));
-        //console.log("v1", Cesium.Math.toDegrees(v1Carto.latitude), ",", Cesium.Math.toDegrees(v1Carto.longitude));
-        //console.log("v2", Cesium.Math.toDegrees(v2Carto.latitude), ",", Cesium.Math.toDegrees(v2Carto.longitude));
+        console.log("v0", Cesium.Math.toDegrees(v0Carto.latitude), ",", Cesium.Math.toDegrees(v0Carto.longitude));
+        console.log("v1", Cesium.Math.toDegrees(v1Carto.latitude), ",", Cesium.Math.toDegrees(v1Carto.longitude));
+        console.log("v2", Cesium.Math.toDegrees(v2Carto.latitude), ",", Cesium.Math.toDegrees(v2Carto.longitude));
         
         
     }
