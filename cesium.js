@@ -6,7 +6,7 @@
 Cesium.Ion.defaultAccessToken = null;
 
 const transition3D2D = 11;
-
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 // const naturalEarthProvider = await Cesium.TileMapServiceImageryProvider.fromUrl(
 //   Cesium.buildModuleUrl("Assets/Textures/NaturalEarthII")
 // );
@@ -61,10 +61,55 @@ window.viewer.container.appendChild(fullerCodeCopyBtn);
 const fullerCodeShareBtn = document.createElement('button');
 fullerCodeShareBtn.id = 'fullerCodeShare';
 fullerCodeShareBtn.type = 'button';
-fullerCodeShareBtn.textContent = 'Share';
+fullerCodeShareBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.23c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.44 9.31 6.77 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.77 0 1.44-.3 1.96-.77l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>';
 fullerCodeShareBtn.className = 'fullerCodeShare';
 fullerCodeShareBtn.setAttribute('aria-label', 'Share location');
 window.viewer.container.appendChild(fullerCodeShareBtn);
+
+// Center-on-user button
+const fullerCodeCenterBtn = document.createElement('button');
+fullerCodeCenterBtn.id = 'fullerCodeCenter';
+fullerCodeCenterBtn.type = 'button';
+fullerCodeCenterBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="4"/><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="4" opacity="0.6"/></svg>';
+fullerCodeCenterBtn.className = 'fullerCodeCenter';
+fullerCodeCenterBtn.setAttribute('aria-label', 'Center on my location');
+window.viewer.container.appendChild(fullerCodeCenterBtn);
+
+// Share menu container
+const shareMenu = document.createElement('div');
+shareMenu.id = 'shareMenu';
+shareMenu.className = 'shareMenu';
+shareMenu.innerHTML = `
+  <button class="shareOption" data-app="googlemaps" aria-label="Open in Google Maps">
+    <svg class="app-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" fill="#4285F4"/>
+      <path d="M12 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2m0 9c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4m0 5c-2.67 0-8-1.34-8-4v-3h16v3c0 2.66-5.33 4-8 4z" fill="white"/>
+    </svg>
+    <span>Google Maps</span>
+  </button>
+  <button class="shareOption" data-app="applemaps" aria-label="Open in Apple Maps">
+    <svg class="app-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" fill="#555555"/>
+      <path d="M12 5c-3.866 0-7 3.134-7 7 0 5.25 7 10 7 10s7-4.75 7-10c0-3.866-3.134-7-7-7zm0 9.5c-1.381 0-2.5-1.119-2.5-2.5s1.119-2.5 2.5-2.5 2.5 1.119 2.5 2.5-1.119 2.5-2.5 2.5z" fill="white"/>
+    </svg>
+    <span>Apple Maps</span>
+  </button>
+  <button class="shareOption" data-app="waze" aria-label="Open in Waze">
+    <svg class="app-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" fill="#00A0DF"/>
+      <path d="M12 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2m0 7c-2.21 0-4 1.79-4 4 0 2.05 1.53 3.76 3.56 3.97V19c0-.55.45-1 1-1s1 .45 1 1v2.97c2.03-.21 3.56-1.92 3.56-3.97 0-2.21-1.79-4-4-4z" fill="white"/>
+    </svg>
+    <span>Waze</span>
+  </button>
+  <button class="shareOption" data-app="herewego" aria-label="Open in Here We Go">
+    <svg class="app-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" fill="#0066CC"/>
+      <path d="M12 5c3.866 0 7 3.134 7 7s-3.134 7-7 7-7-3.134-7-7 3.134-7 7-7zm0 2c-2.761 0-5 2.239-5 5s2.239 5 5 5 5-2.239 5-5-2.239-5-5-5zm0 2c1.657 0 3 1.343 3 3s-1.343 3-3 3-3-1.343-3-3 1.343-3 3-3z" fill="white"/>
+    </svg>
+    <span>Here We Go</span>
+  </button>
+`;
+window.viewer.container.appendChild(shareMenu);
 
 function positionHeaderButtons() {
     try {
@@ -84,49 +129,119 @@ function positionHeaderButtons() {
             fullerCodeShareBtn.style.left = (copyLeft + 70) + 'px';
         }
         fullerCodeShareBtn.style.top = (rect.top - containerRect.top) + 'px';
+        
+        // Position Center button next to Share
+        const shareRect = fullerCodeShareBtn.getBoundingClientRect();
+        fullerCodeCenterBtn.style.left = (shareRect.left - containerRect.left + shareRect.width + 8) + 'px';
+        fullerCodeCenterBtn.style.top = (rect.top - containerRect.top) + 'px';
+        
+        // Position Share menu below the Share button
+        const menuLeft = shareRect.left - containerRect.left;
+        const menuTop = shareRect.bottom - containerRect.top + 4;
+        shareMenu.style.left = menuLeft + 'px';
+        shareMenu.style.top = menuTop + 'px';
     } catch (e) {
         // fallback
         fullerCodeCopyBtn.style.left = '220px';
         fullerCodeShareBtn.style.left = '300px';
+        shareMenu.style.left = '300px';
+        shareMenu.style.top = '40px';
     }
 }
 
-// Share logic
-async function shareLocation() {
-    const carto = window.viewer.camera.positionCartographic;
-    const lat = Cesium.Math.toDegrees(carto.latitude).toFixed(6);
-    const lon = Cesium.Math.toDegrees(carto.longitude).toFixed(6);
+// Share logic - now toggle the menu
+function toggleShareMenu() {
+    shareMenu.classList.toggle('visible');
+}
 
-    // Extraction propre du code (ex: "MTV")
-    const labelText = (fullerCodeLabel.textContent || '').trim();
-    const match = labelText.match(/([A-Z0-9]+)$/i);
-    const code = match ? match[1].toUpperCase() : '';
-    
-    const shareData = {
-        title: `Fullercode ${code}`,
-        // On garde un texte simple. Waze a tendance à ignorer l'URL s'il trouve un texte complexe.
-        // Mettre les coordonnées en premier dans le texte aide certains parseurs d'apps.
-        text: `${lat},${lon} (Fullercode: ${code})`,
-        // Le format ?q=lat,lon est le plus universel pour déclencher les apps de navigation.
-        url: `https://maps.google.com/maps?q=${lat},${lon}`
-    };
-
-    // Vérification de la capacité de partage et du contexte sécurisé
-    if (navigator.share && window.isSecureContext) {
-        try {
-            await navigator.share(shareData);
-        } catch (err) {
-            if (err.name !== 'AbortError') {
-                console.error('Erreur de partage:', err);
-            }
-        }
+fullerCodeShareBtn.addEventListener('click', toggleShareMenu);
+fullerCodeCenterBtn.addEventListener('click', () => {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            const height = position.coords.altitude != null ? Math.max(position.coords.altitude + 20, 50) : 1000;
+            const destination = Cesium.Cartesian3.fromDegrees(lon, lat, height, sphereEllipsoid);
+            window.viewer.camera.flyTo({
+                destination,
+                orientation: {
+                    heading: 0.0,
+                    pitch: -Cesium.Math.PI_OVER_TWO,
+                    roll: 0.0
+                }
+            });
+        }, (error) => {
+            console.warn('Geolocation unavailable, centering on current camera position', error);
+            const currentPos = window.viewer.camera.position;
+            window.viewer.camera.flyTo({ destination: currentPos });
+        }, { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 });
     } else {
-        // Fallback : ouverture directe dans Google Maps (qui redirigera vers l'app si installée)
-        window.open(shareData.url, '_blank');
+        const currentPos = window.viewer.camera.position;
+        window.viewer.camera.flyTo({ destination: currentPos });
     }
-}
+});
 
-fullerCodeShareBtn.addEventListener('click', shareLocation);
+// Close menu when clicking outside
+document.addEventListener('click', (e) => {
+    if (!fullerCodeShareBtn.contains(e.target) && !shareMenu.contains(e.target)) {
+        shareMenu.classList.remove('visible');
+    }
+});
+
+// Handle share option clicks
+document.querySelectorAll('.shareOption').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+        const app = btn.dataset.app;
+        const carto = window.viewer.camera.positionCartographic;
+        const lat = Cesium.Math.toDegrees(carto.latitude).toFixed(6);
+        const lon = Cesium.Math.toDegrees(carto.longitude).toFixed(6);
+        
+        const labelText = (fullerCodeLabel.textContent || '').trim();
+        const match = labelText.match(/([A-Z0-9]+)$/i);
+        const code = match ? match[1].toUpperCase() : '';
+        
+        let url = '';
+        
+        const altitude = window.viewer.camera.positionCartographic.height;
+        const span = altitude * 0.0000035;
+        const herewegozoom = 26.75 - Math.log2(altitude);
+        //const log10Alt = Math.log10(altitude);
+        //const herewegozoom = 29.770025- 4.315023 * log10Alt
+        // + 0.086116 * log10Alt * log10Alt;
+        switch(app) {
+            case 'googlemaps':
+                url = isMobile 
+                    ? `comgooglemaps://?q=${lat},${lon}`
+                    : `https://maps.google.com/maps?q=${lat},${lon}`;
+                break;
+            case 'applemaps':
+                url = `https://maps.apple.com/frame?center=${lat},${lon}&span=${span},${span}`;
+                break;
+            case 'waze':
+                url = isMobile
+                    ? `waze://?q=${lat},${lon}`
+                    : `https://waze.com/ul?q=${lat},${lon}`;
+                break;
+            case 'herewego':
+                url = `https://wego.here.com/?map=${lat},${lon},${herewegozoom}`;
+                break;
+        }
+        
+        if (isMobile && (app === 'googlemaps' || app === 'waze')) {
+            // Try app deep link first, fallback to web
+            window.location.href = url;
+            setTimeout(() => {
+                window.location.href = url.includes('comgooglemaps') 
+                    ? `https://maps.google.com/maps?q=${lat},${lon}`
+                    : `https://waze.com/ul?q=${lat},${lon}`;
+            }, 500);
+        } else {
+            window.open(url, '_blank');
+        }
+        
+        shareMenu.classList.remove('visible');
+    });
+});
 
 // initial position and on resize
 positionHeaderButtons();
@@ -405,7 +520,12 @@ const layer = window.viewer.imageryLayers.get(0);
 window.viewer.scene.screenSpaceCameraController.enableTilt = false
 window.entities = window.viewer.entities;
 // Ajustement des hauteurs de caméra pour une sphère de rayon 1.0
-window.LevelHeights = [6500000, 2600000, 1000000, 200000, 100000, 10000, 1800, 700, 170, 50, 10];
+if (isMobile) {
+    window.LevelHeights = [5000000, 1800000,600000, 140000, 60000, 6000, 1200, 400, 120, 16, 4];
+}
+else {
+    window.LevelHeights = [6500000, 2600000, 1000000, 200000, 100000, 10000, 1800, 700, 170, 50, 10];
+}
 window.triangles = []; // To store subdivided triangles
 
 window.entities.add({
