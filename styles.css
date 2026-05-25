@@ -77,6 +77,29 @@ html,body{width: 100%;
   z-index: 100000;
   width: 200px;
 }
+
+#triangleDetails {
+  position: absolute;
+  display: none;
+  top: 154px;
+  left: 10px;
+  max-width: min(420px, calc(100vw - 20px));
+  background: rgba(10, 2, 122, 0.9);
+  color: #f0ff6a;
+  font-family: monospace;
+  font-size: 1em;
+  line-height: 1.35;
+  padding: 8px 10px;
+  border: 1px solid #f0ff6a;
+  border-radius: 6px;
+  z-index: 100000;
+  pointer-events: none;
+}
+
+#triangleDetails.visible {
+  display: block;
+}
+
 /* Copy button next to the fullerCodeWidget */
 .fullerCodeCopy {
   position: absolute; /* positioned by JS (left/top) */

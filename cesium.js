@@ -47,6 +47,8 @@ window.viewer = new Cesium.Viewer('cesiumContainer', {
     animation: false,
     timeline: false,
     geocoder: false,
+    selectionIndicator: false,
+    infoBox: false,
     skyBox: false,
     skyatmosphere: false,
     sun: false,
@@ -58,6 +60,144 @@ window.viewer = new Cesium.Viewer('cesiumContainer', {
 
 //window.viewer.imageryLayers.addImageryProvider(osm);
 //window.viewer.imageryLayers.raiseToTop(osm);
+
+const TRIANGLE_DEFAULT_MATERIAL = Cesium.Color.BLUE.withAlpha(0.05);
+const TRIANGLE_DEFAULT_OUTLINE_COLOR = Cesium.Color.MAGENTA;
+const TRIANGLE_SELECTED_MATERIAL = Cesium.Color.YELLOW.withAlpha(0.35);
+const TRIANGLE_SELECTED_OUTLINE_COLOR = Cesium.Color.YELLOW;
+let selectedTriangleEntity = null;
+let triangleDetailsTimeout = null;
+let triangleDetailsLabel = null;
+
+function getTriangleEntityFromSelectedEntity(entity) {
+    if (!entity || typeof entity.id !== "string") return null;
+
+    if (entity.id.startsWith("triangle ")) {
+        return entity;
+    }
+
+    if (entity.id.startsWith("label ")) {
+        return window.viewer.entities.getById("triangle " + entity.id.substring("label ".length));
+    }
+
+    return null;
+}
+
+function setTriangleHighlighted(entity, highlighted) {
+    if (!entity || !entity.polygon) return;
+
+    const isCompactViewport = window.innerWidth <= 700;
+    entity.polygon.material = highlighted ? TRIANGLE_SELECTED_MATERIAL : TRIANGLE_DEFAULT_MATERIAL;
+    entity.polygon.outlineColor = highlighted ? TRIANGLE_SELECTED_OUTLINE_COLOR : TRIANGLE_DEFAULT_OUTLINE_COLOR;
+    entity.polygon.outlineWidth = highlighted ? (isCompactViewport ? 4 : 8) : (isCompactViewport ? 2 : 5);
+}
+
+function getTrianglePositions(entity) {
+    const hierarchy = entity?.polygon?.hierarchy;
+    if (!hierarchy) return [];
+
+    const value = typeof hierarchy.getValue === "function"
+        ? hierarchy.getValue(window.viewer.clock.currentTime)
+        : hierarchy;
+
+    return value?.positions || [];
+}
+
+function formatVertex(position) {
+    const cartographic = Cesium.Cartographic.fromCartesian(position, sphereEllipsoid);
+    const lat = Cesium.Math.toDegrees(cartographic.latitude).toFixed(6);
+    const lon = Cesium.Math.toDegrees(cartographic.longitude).toFixed(6);
+    return `${lat}, ${lon}`;
+}
+
+function getCentralAngle(a, b) {
+    const na = Cesium.Cartesian3.normalize(a, new Cesium.Cartesian3());
+    const nb = Cesium.Cartesian3.normalize(b, new Cesium.Cartesian3());
+    const dot = Cesium.Math.clamp(Cesium.Cartesian3.dot(na, nb), -1.0, 1.0);
+    return Math.acos(dot);
+}
+
+function getSphericalTriangleArea(positions) {
+    if (!positions || positions.length < 3) return 0;
+
+    const a = getCentralAngle(positions[1], positions[2]);
+    const b = getCentralAngle(positions[2], positions[0]);
+    const c = getCentralAngle(positions[0], positions[1]);
+    const s = (a + b + c) / 2;
+    const tanProduct = Math.tan(s / 2)
+        * Math.tan((s - a) / 2)
+        * Math.tan((s - b) / 2)
+        * Math.tan((s - c) / 2);
+    const sphericalExcess = 4 * Math.atan(Math.sqrt(Math.max(0, tanProduct)));
+
+    return sphericalExcess * window.radius * window.radius;
+}
+
+function formatArea(squareMeters) {
+    if (!Number.isFinite(squareMeters)) return "-";
+    if (squareMeters >= 1000000) return `${(squareMeters / 1000000).toFixed(3)} km2`;
+    return `${squareMeters.toFixed(0)} m2`;
+}
+
+function showTriangleDetails(entity) {
+    if (!triangleDetailsLabel) return;
+
+    const triangleId = entity.id.substring("triangle ".length);
+    const positions = getTrianglePositions(entity);
+    const vertices = positions.slice(0, 3).map(formatVertex);
+    const area = getSphericalTriangleArea(positions);
+
+    triangleDetailsLabel.innerHTML = `
+        <div>code: ${triangleId}</div>
+        <div>A: ${vertices[0] || "-"}</div>
+        <div>B: ${vertices[1] || "-"}</div>
+        <div>C: ${vertices[2] || "-"}</div>
+        <div>surface: ${formatArea(area)}</div>
+    `;
+    triangleDetailsLabel.classList.add("visible");
+
+    if (triangleDetailsTimeout) {
+        clearTimeout(triangleDetailsTimeout);
+    }
+    triangleDetailsTimeout = setTimeout(() => {
+        triangleDetailsLabel.classList.remove("visible");
+    }, 2000);
+}
+
+function selectTriangleEntity(triangleEntity) {
+    if (selectedTriangleEntity && selectedTriangleEntity !== triangleEntity) {
+        setTriangleHighlighted(selectedTriangleEntity, false);
+    }
+
+    selectedTriangleEntity = triangleEntity;
+    setTriangleHighlighted(selectedTriangleEntity, true);
+    showTriangleDetails(selectedTriangleEntity);
+}
+
+window.viewer.selectedEntityChanged.addEventListener((entity) => {
+    if (selectedTriangleEntity) {
+        setTriangleHighlighted(selectedTriangleEntity, false);
+        selectedTriangleEntity = null;
+    }
+
+    const triangleEntity = getTriangleEntityFromSelectedEntity(entity);
+    if (triangleEntity) {
+        selectTriangleEntity(triangleEntity);
+    }
+});
+
+window.viewer.canvas.addEventListener("click", (event) => {
+    const rect = window.viewer.canvas.getBoundingClientRect();
+    const picked = window.viewer.scene.pick(new Cesium.Cartesian2(
+        event.clientX - rect.left,
+        event.clientY - rect.top
+    ));
+    const triangleEntity = getTriangleEntityFromSelectedEntity(picked?.id);
+    if (triangleEntity) {
+        selectTriangleEntity(triangleEntity);
+    }
+});
+
 const cameraLabel = document.createElement("div");
 cameraLabel.id = "cameraWidget";
 cameraLabel.textContent = "Lat: - Lon: - Alt: -";
@@ -312,6 +452,11 @@ fullerCodeInput.id = "fullerCodeInput";
 fullerCodeInput.type = "text";
 fullerCodeInput.placeholder = "Enter fullercode...";
 window.viewer.container.appendChild(fullerCodeInput);
+
+triangleDetailsLabel = document.createElement("div");
+triangleDetailsLabel.id = "triangleDetails";
+window.viewer.container.appendChild(triangleDetailsLabel);
+
 let cameraHeight = 100000;
 // Enforce uppercase and allowed-character rules:
 // - first character allowed set: "CM3FA2H5PX9V8TR7NSJK"
@@ -626,10 +771,10 @@ function addPolygon(positions, triangleId, parentEntity,center) {
                 perPositionHeight: isDetailedLevel,
                 height: isDetailedLevel ? undefined : 0,
                 heightReference: isDetailedLevel ? Cesium.HeightReference.NONE : Cesium.HeightReference.CLAMP_TO_GROUND,
-                material: Cesium.Color.BLUE.withAlpha(0.05),
+                material: TRIANGLE_DEFAULT_MATERIAL,
                 outline: true,
                 outlineWidth: isMobile ? 2 : 5,
-                outlineColor: Cesium.Color.MAGENTA,
+                outlineColor: TRIANGLE_DEFAULT_OUTLINE_COLOR,
             }
     });
 
