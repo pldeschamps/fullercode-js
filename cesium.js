@@ -10,9 +10,29 @@ const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 // const naturalEarthProvider = await Cesium.TileMapServiceImageryProvider.fromUrl(
 //   Cesium.buildModuleUrl("Assets/Textures/NaturalEarthII")
 // );
-const osm = new Cesium.OpenStreetMapImageryProvider({
-    url : 'https://tile.openstreetmap.org/'
-});
+
+// openstreetmap en dur:
+//const osm = new Cesium.OpenStreetMapImageryProvider({
+//    url : 'https://tile.openstreetmap.org/'
+//});
+
+const imageryProviderViewModels = Cesium.createDefaultImageryProviderViewModels();
+let osmProviderViewModel = imageryProviderViewModels.find(provider => (
+    provider.name.replace(/\u00ad/g, "").replace(/[^a-z]/gi, "").toLowerCase() === "openstreetmap"
+));
+
+if (!osmProviderViewModel) {
+    osmProviderViewModel = new Cesium.ProviderViewModel({
+        name: "OpenStreetMap",
+        iconUrl: Cesium.buildModuleUrl("Widgets/Images/ImageryProviders/openStreetMap.png"),
+        tooltip: "OpenStreetMap",
+        creationFunction: () => new Cesium.OpenStreetMapImageryProvider({
+            url: "https://tile.openstreetmap.org/"
+        })
+    });
+    imageryProviderViewModels.unshift(osmProviderViewModel);
+}
+
 window.radius = 6371010.0;
 const sphereEllipsoid = new Cesium.Ellipsoid(6371010, 6371010, 6371010);
 window.viewer = new Cesium.Viewer('cesiumContainer', {
@@ -22,7 +42,8 @@ window.viewer = new Cesium.Viewer('cesiumContainer', {
     //         Cesium.buildModuleUrl("Assets/Textures/NaturalEarthII"),
     //     ),
     // ),
-    imageryProvider: osm,
+    imageryProviderViewModels,
+    selectedImageryProviderViewModel: osmProviderViewModel,
     animation: false,
     timeline: false,
     geocoder: false,
@@ -35,7 +56,7 @@ window.viewer = new Cesium.Viewer('cesiumContainer', {
 // Désactive le test de profondeur contre le globe pour éviter que les polygones ne soient "avalés" par la surface
 //window.viewer.scene.globe.depthTestAgainstTerrain = false;
 
-window.viewer.imageryLayers.addImageryProvider(osm);
+//window.viewer.imageryLayers.addImageryProvider(osm);
 //window.viewer.imageryLayers.raiseToTop(osm);
 const cameraLabel = document.createElement("div");
 cameraLabel.id = "cameraWidget";
