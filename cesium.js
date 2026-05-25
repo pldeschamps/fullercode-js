@@ -79,34 +79,33 @@ window.viewer.container.appendChild(fullerCodeCenterBtn);
 const shareMenu = document.createElement('div');
 shareMenu.id = 'shareMenu';
 shareMenu.className = 'shareMenu';
+const sites = [
+  "https://www.google.com/maps/",
+  "https://maps.apple.com/",
+  "https://wego.here.com/",
+  "https://www.waze.com/"
+];
+
+for (const url of sites) {
+  const favicon = new URL("/favicon.ico", url).href;
+  console.log(favicon);
+}
 shareMenu.innerHTML = `
   <button class="shareOption" data-app="googlemaps" aria-label="Open in Google Maps">
-    <svg class="app-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="10" fill="#4285F4"/>
-      <path d="M12 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2m0 9c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4m0 5c-2.67 0-8-1.34-8-4v-3h16v3c0 2.66-5.33 4-8 4z" fill="white"/>
-    </svg>
+        <img class="app-icon" src="https://www.google.com/s2/favicons?domain=www.google.com/maps&sz=64" width="20" height="20" alt="Google Maps">
     <span>Google Maps</span>
   </button>
   <button class="shareOption" data-app="applemaps" aria-label="Open in Apple Maps">
-    <svg class="app-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="10" fill="#555555"/>
-      <path d="M12 5c-3.866 0-7 3.134-7 7 0 5.25 7 10 7 10s7-4.75 7-10c0-3.866-3.134-7-7-7zm0 9.5c-1.381 0-2.5-1.119-2.5-2.5s1.119-2.5 2.5-2.5 2.5 1.119 2.5 2.5-1.119 2.5-2.5 2.5z" fill="white"/>
-    </svg>
+    <img class="app-icon" src="https://www.google.com/s2/favicons?domain=maps.apple.com/&sz=64" width="20" height="20" alt="Apple Maps">
     <span>Apple Maps</span>
   </button>
   <button class="shareOption" data-app="waze" aria-label="Open in Waze">
-    <svg class="app-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="10" fill="#00A0DF"/>
-      <path d="M12 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2m0 7c-2.21 0-4 1.79-4 4 0 2.05 1.53 3.76 3.56 3.97V19c0-.55.45-1 1-1s1 .45 1 1v2.97c2.03-.21 3.56-1.92 3.56-3.97 0-2.21-1.79-4-4-4z" fill="white"/>
-    </svg>
+    <img class="app-icon" src="https://www.waze.com/favicon.ico" width="20" height="20" alt="Waze">
     <span>Waze</span>
   </button>
   <button class="shareOption" data-app="herewego" aria-label="Open in Here We Go">
-    <svg class="app-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="10" fill="#0066CC"/>
-      <path d="M12 5c3.866 0 7 3.134 7 7s-3.134 7-7 7-7-3.134-7-7 3.134-7 7-7zm0 2c-2.761 0-5 2.239-5 5s2.239 5 5 5 5-2.239 5-5-2.239-5-5-5zm0 2c1.657 0 3 1.343 3 3s-1.343 3-3 3-3-1.343-3-3 1.343-3 3-3z" fill="white"/>
-    </svg>
-    <span>Here We Go</span>
+    <img class="app-icon" src="https://www.google.com/s2/favicons?domain=wego.here.com&sz=64" width="20" height="20" alt="Here We Go">
+    <span>Here WeGo</span>
   </button>
 `;
 window.viewer.container.appendChild(shareMenu);
