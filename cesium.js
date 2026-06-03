@@ -26,6 +26,7 @@ window.viewer = new Cesium.Viewer('cesiumContainer', {
     animation: false,
     timeline: false,
     geocoder: false,
+    navigationHelpButton: false,
     skyBox: false,
     skyatmosphere: false,
     sun: false,
