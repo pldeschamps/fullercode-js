@@ -77,6 +77,29 @@ html,body{width: 100%;
   z-index: 100000;
   width: 200px;
 }
+
+#triangleDetails {
+  position: absolute;
+  display: none;
+  top: 154px;
+  left: 10px;
+  max-width: min(420px, calc(100vw - 20px));
+  background: rgba(10, 2, 122, 0.9);
+  color: #f0ff6a;
+  font-family: monospace;
+  font-size: 1em;
+  line-height: 1.35;
+  padding: 8px 10px;
+  border: 1px solid #f0ff6a;
+  border-radius: 6px;
+  z-index: 100000;
+  pointer-events: none;
+}
+
+#triangleDetails.visible {
+  display: block;
+}
+
 /* Copy button next to the fullerCodeWidget */
 .fullerCodeCopy {
   position: absolute; /* positioned by JS (left/top) */
@@ -89,20 +112,102 @@ html,body{width: 100%;
   font-family: monospace;
   font-size: 1.4em;
   cursor: pointer;
+  height: 32px;
 }
 
 /* Share button style */
 .fullerCodeShare {
   position: absolute;
   z-index: 100000;
-  padding: 6px 10px;
+  padding: 2px 2px;
   border-radius: 6px;
-  border: 1px solid rgba(153, 102, 184, 0.9);
+  border: 1px solid #f0ff6a;
   background: rgba(10, 2, 122, 0.8);
-  color: #9966b8;
+  color: #f0ff6a;
   font-family: monospace;
   font-size: 1.4em;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.herewego {
+    background: #fff;
+    mix-blend-mode: multiply;
+}
+
+.fullerCodeCenter {
+  position: absolute;
+  z-index: 100000;
+  padding: 2px 2px;
+  border-radius: 6px;
+  border: 1px solid #6ae6ff;
+  background: rgba(10, 2, 122, 0.8);
+  color: #6ae6ff;
+  font-family: monospace;
+  font-size: 1.4em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fullerCodeCenter {
+  width: 32px;
+  height: 32px;
+}
+
+.fullerCodeCenter svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Share menu */
+.shareMenu {
+  position: absolute;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(10, 2, 122, 0.95);
+  border: 1px solid #f0ff6a;
+  border-radius: 6px;
+  padding: 8px;
+  z-index: 100001;
+  min-width: 160px;
+}
+
+.shareMenu.visible {
+  display: flex;
+}
+
+.shareOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(240, 255, 106, 0.5);
+  border-radius: 4px;
+  color: #f0ff6a;
+  font-family: monospace;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.shareOption:hover {
+  background: rgba(0, 0, 0, 0.6);
+  border-color: #f0ff6a;
+  box-shadow: 0 0 8px rgba(240, 255, 106, 0.3);
+}
+
+.shareOption .app-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
 }
 
 .fullerCodeCopy:active,
